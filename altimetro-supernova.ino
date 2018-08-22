@@ -8,13 +8,24 @@
 #include <Adafruit_BMP085.h>
 
 //Definições default
-#define SEA_LVL_PRESS 101500
+#define PRESSAO_MAR 101500
+#define EIXO_X 0
+#define EIXO_Y 1
+#define EIXO_Z 2
+
+
+//Definições de input
 #define PINO_BUZZER 4
 #define PINO_BOTAO 5
+#define PINO_LED1 3
+#define PINO_LED2 6
 
-#define ERRO_BMP 'a'
-#define ERRO_GYRO 'b'
-#define ERRO_SD 'c'
+//definições de erros e estados
+#define ERRO_BMP 'b'
+#define ERRO_MPU 'm'
+#define ERRO_SD 's'
+#define ESTADO_GRAVANDO 'g'
+#define ESTADO_FINALIZADO 'f'
 
 //Variáveis de bibliotecas
 Adafruit_BMP085 bmp;
@@ -22,14 +33,18 @@ SdFat sd;
 SdFile arquivo;
 
 //Variáveis de timing
-int     millisAtual   = 0;
-int     millisUltimo  = 0;
+int     millisAtual		= 0;
+int     millisUltimo	= 0;
+int		millisLed		= 0;
+int 	millisBuzzer	= 0;
 
 //Variáveis de dados
 int32_t pressaoAtual;
 float   alturaAltual;
 float   alturaInicial;
 float   alturaMaxima =  0;
+float 	aceleracaoAtual[3]; //em [x,y,z]
+float	angulacaoAtual[3];	//em [x,y,z]
 
 //variáveis de controle
 
@@ -38,6 +53,7 @@ bool    terminou = false;
 bool    rodando = false;
 bool    apogeu = false;
 char    erro = false;
+char	statusAtual;
 
 
 
@@ -48,18 +64,21 @@ void setup() {
 
 void loop() {
 
-    //Sequência de verificação
+    //Sequência de verificação, só é executada caso não existam erros
+	//estes erros são notificados de acordo
 
     if(erro == 0){
     leBotoes();
-    adquire();
+    adquireDados();
+	trataDados
     checaCondições();
     gravaDados();
-    doVars();
     finaliza();
     recupera();
     }
     notifica();
+	
+	delay(100);
     
     
 }
@@ -67,27 +86,28 @@ void loop() {
 
 void inicializa(){
 
-  //Botão
+  //Inicializando as portas 
   pinMode(PINO_BOTAO, INPUT);
-
-  //Buzzer
   pinMode(PINO_BUZZER, OUTPUT);
-
-  //LED vermelho
   pinMode(PINO_LED1, OUTPUT);
-
-  //LED verde
   pinMode(PINO_LED2, OUTPUT);
 
+  while(erro == 1){
+
+  erro = 1;
   
-  //incializar o altímetro
+  //Inicializando o Altímetro
   if (!bmp.begin()) {
   erro = ERRO_BMP;
   }
+  
   //iniciar o IMU
+
+  
   //inicializar o cartão SD
 
-  //caso erro bipe/led
+  
+  }
   
 }
 
@@ -95,9 +115,93 @@ void notifica (char codigo){
 
   switch codigo{
 
-    case 
+	//Problema com o BMP180
+    case ERRO_BMP:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	//Problema com o Gyro/Acelerômetro 
+	case ERRO_MPU:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	//Problema com o SD
+	case ERRO_SD:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	case ESTADO_FINALIZADO:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	case ESTADO_GRAVANDO:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	default:
+	//led piscando devagar indicando espera
+	if(millisAtual - millisLed	> 500)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+		
+	
+	break;
+	
+	
   }
 
 }
 
+void recupera (){
+	
+	//verifica aqui se o foguete já atingiu o apogeu e se está descendo pelas
+	//suas variáveis globais de controle e chama a função que faz o acionamento
+	//do paraquedas
+	
+	if(apogeu && descendo){
+	
+	abreParaquedas();
+	
+	}
+}
+
+void adquire (){
+	
+	//todas as medidas são feitas aqui em sequeência de maneira que os valores
+	//sejam temporalmente próximos
+	pressaoAtual = bmp.readPressure();
+    alturaAltual = bmp.readAltitude(PRESSAO_MAR);
+	
+	aceleracaoAtual[EIXO_X] = ;
+	aceleracaoAtual[EIXO_Y] = ;
+	aceleracaoAtual[EIXO_Z] = ;
+	
+	angulacaoAtual[EIXO_X] = ;
+	angulacaoAtual[EIXO_Y] = ;
+	angulacaoAtual[EIXO_Z] = ;
+	
+	
+}
+
+void leBotoes(){
+	bool estado;
+	estado digitalRead(PINO_BOTAO);
+	
+	if(estado){
+		statusAtual = ESTADO_GRAVANDO;
+		
+	}
+	
+	
+	
+	
 
