@@ -34,6 +34,7 @@
 Adafruit_BMP085 bmp;
 SdFat sd;
 SdFile arquivo;
+Servo paraquedas;
 
 //Variáveis de timing
 int     millisAtual		= 0;
@@ -49,6 +50,10 @@ float   alturaInicial;
 float   alturaMaxima =  0;
 float 	aceleracaoAtual[3]; //em [x,y,z]
 float	angulacaoAtual[3];	//em [x,y,z]
+
+float	vetorAltura[10];
+float	vetorAceleracao[3][10];
+float	vetorAngulacao[3][10];
 
 //variáveis de controle
 
@@ -74,7 +79,7 @@ void loop() {
     if(erro == 0){
     leBotoes();
     adquireDados();
-	trataDados
+	trataDados();
     checaCondições();
     gravaDados();
     finaliza();
@@ -222,7 +227,79 @@ void leBotoes(){
 	
 	
 }
+
+void abreParaquedas(){
 	
+	paraquedas.write(SERVO_ABERTO);
+	
+}
+
+void trataDados(){
+	
+	//o tratamento dos dados aqui é até o momento somente uma média rolante
+	
+	vetorAltura [n] = alturaAltual;
+	
+	vetorAceleracao [EIXO_X][n] = aceleracaoAtual[EIXO_X];
+	vetorAceleracao [EIXO_Y][n] = aceleracaoAtual[EIXO_Y];
+	vetorAceleracao [EIXO_Z][n] = aceleracaoAtual[EIXO_Z];
+	
+	vetorAngulacao [EIXO_X][n] = angulacaoAtual[EIXO_X];
+	vetorAngulacao [EIXO_Y][n] = angulacaoAtual[EIXO_Y];
+	vetorAngulacao [EIXO_Z][n] = angulacaoAtual[EIXO_Z];
+	
+	//otimizar isso aqui depois
+	for(int i = 0; i<10;i++){
+		
+		if(i = 0){
+			
+		mediaAltura = 0;
+		
+		mediaAceleracao[EIXO_X] = 0;
+		mediaAceleracao[EIXO_Y] = 0;
+		mediaAceleracao[EIXO_Z] = 0;
+		
+		mediaAngulacao[EIXO_X] = 0;
+		mediaAngulacao[EIXO_Y] = 0; 
+		mediaAngulacao[EIXO_Z] = 0;
+			
+		}
+		
+		mediaAltura += vetorAltura[i];
+		
+		mediaAceleracao[EIXO_X] += vetorAceleracao[EIXO_X][i];
+		mediaAceleracao[EIXO_Y] += vetorAceleracao[EIXO_Y][i];
+		mediaAceleracao[EIXO_Z] += vetorAceleracao[EIXO_Z][i];
+		
+		mediaAngulacao[EIXO_X] += vetorAngulacao[EIXO_X][i];
+		mediaAngulacao[EIXO_Y] += vetorAngulacao[EIXO_Y][i];
+		mediaAngulacao[EIXO_Z] += vetorAngulacao[EIXO_Z][i];
+		
+		
+	}
+	
+	mediaAltura = mediaAltura/10;
+	
+	mediaAceleracao[EIXO_X] = mediaAceleracao[EIXO_X] /10;
+	mediaAceleracao[EIXO_Y] = mediaAceleracao[EIXO_Y] /10;
+	mediaAceleracao[EIXO_Z] = mediaAceleracao[EIXO_Z] /10;
+	
+	mediaAngulacao[EIXO_X] = mediaAngulacao[EIXO_X]/10;
+	mediaAngulacao[EIXO_Y] = mediaAngulacao[EIXO_Y]/10;
+	mediaAngulacao[EIXO_Z] = mediaAngulacao[EIXO_Z]/10;
+	
+	
+	
+	n++;
+	
+	if(n>9)
+		n=0;
+	
+	
+	
+}
+
+
 	
 	
 	
