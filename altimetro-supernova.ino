@@ -20,12 +20,15 @@
 #define PINO_LED1 3
 #define PINO_LED2 6
 
-//definições de erros e estados
+//definições de erros
 #define ERRO_BMP 'b'
 #define ERRO_MPU 'm'
 #define ERRO_SD 's'
+
+//definição de estados
 #define ESTADO_GRAVANDO 'g'
 #define ESTADO_FINALIZADO 'f'
+#define ESTADO_ESPERA 'e'
 
 //Variáveis de bibliotecas
 Adafruit_BMP085 bmp;
@@ -37,6 +40,7 @@ int     millisAtual		= 0;
 int     millisUltimo	= 0;
 int		millisLed		= 0;
 int 	millisBuzzer	= 0;
+int		millisBotao		= 0;
 
 //Variáveis de dados
 int32_t pressaoAtual;
@@ -194,12 +198,30 @@ void adquire (){
 
 void leBotoes(){
 	bool estado;
+	millisAtual = millis();
 	estado digitalRead(PINO_BOTAO);
 	
-	if(estado){
+	//Liga a gravação se em espera
+	if(estado && (statusAtual == ESTADO_ESPERA)){
 		statusAtual = ESTADO_GRAVANDO;
 		
 	}
+	
+	//Desliga a gravação se gravando e o botão for segurado por 2s
+	if((statusAtual == ESTADO_GRAVANDO) && estado &&(millisBotao == 0){
+	
+	millisBotao = millis();
+		
+	}
+	else if ((statusAtual == ESTADO_GRAVANDO) && !estado){
+	millisBotao = 0;
+	}
+	
+	if(millisAtual - millisBotao >= 2000)
+		statusAtual = ESTADO_ESPERA;
+	
+	
+}
 	
 	
 	
