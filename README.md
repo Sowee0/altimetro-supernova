@@ -12,3 +12,5 @@ Esse é o repositório do altimetro que faz o logging dos foguetes da Supernova 
 Devido à modularidade do código pode-se editar as funções com o mínimo de refatoramento possível.
 
 Tudo que é configuravel pelo usuário está na seção `//config`
+
+Enjoy!
