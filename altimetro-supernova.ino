@@ -60,6 +60,7 @@ float	vetorAngulacao[3][10];
 bool    inicializado = false;
 bool    terminou = false;
 bool    rodando = false;
+bool 	emVoo = false;
 bool    apogeu = false;
 char    erro = false;
 char	statusAtual;
@@ -67,27 +68,48 @@ char	statusAtual;
 
 
 void setup() {
-  inicializa();
+	
+	//Faz o setup inicial dos sensores de movimento e altura assim
+	//como as portas 
+	inicializa();
 
 }
 
 void loop() {
-
-    //Sequência de verificação, só é executada caso não existam erros
-	//estes erros são notificados de acordo
-
+	
+	//Se não existem erros no sistema relacionados a inicialização
+	//dos dispositivos, fazer:
+	
     if(erro == 0){
+	
+	//Verifica os botões e trata o clique simples e o clique longo
+	//como controle de início/fim da gravação.
     leBotoes();
+	
+	//Recebe os dados dos sensores e os deixa salvo em variáveis
     adquireDados();
+	
+	//Trata os dados, fazendo filtragens e ajustes.
 	trataDados();
+	
+	//Se a gravação estiver ligada, grava os dados.
+	gravaDados();
+	
+	//De acordo com os dados recebidos, verifica condições como a
+	//altura máxima atingida e seta variáveis de controle de modo
+	//que ações consequintes sejam tomadas.
     checaCondições();
-    gravaDados();
+	
+	//Faz 
     finaliza();
+	
+	//Caso o voo tenha chegado ao ápice, libera o sistema de recuperação
     recupera();
     }
+	
+	//Notifica via LEDs e buzzer problemas com o foguete 
     notifica();
 	
-	delay(100);
     
     
 }
@@ -183,7 +205,7 @@ void recupera (){
 	}
 }
 
-void adquire (){
+void adquireDados(){
 	
 	//todas as medidas são feitas aqui em sequeência de maneira que os valores
 	//sejam temporalmente próximos
@@ -197,7 +219,6 @@ void adquire (){
 	angulacaoAtual[EIXO_X] = ;
 	angulacaoAtual[EIXO_Y] = ;
 	angulacaoAtual[EIXO_Z] = ;
-	
 	
 }
 
@@ -278,6 +299,7 @@ void trataDados(){
 		
 	}
 	
+	//Variáveis finais prontas para serem salvas
 	mediaAltura = mediaAltura/10;
 	
 	mediaAceleracao[EIXO_X] = mediaAceleracao[EIXO_X] /10;
@@ -297,6 +319,10 @@ void trataDados(){
 	
 	
 	
+}
+
+void checaCondições(){
+	if
 }
 
 
