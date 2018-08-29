@@ -14,6 +14,10 @@
 #define EIXO_Z 2
 
 
+#define TEMPO_ATUALIZACAO 50 //em milisegundos
+#define THRESHOLD_DESCIDA 5  //em metros
+
+
 //Definições de input
 #define PINO_BUZZER 4
 #define PINO_BOTAO 5
@@ -77,11 +81,20 @@ void setup() {
 
 void loop() {
 	
+	//Recebendo o tempo atual de maneira a ter uma base de tempo
+	//para uma taxa de atualização
+	millisAtual = millis();
+	
+	
+	
+	
+    if((atualizaMillis - millisAtual) >= TEMPO_ATUALIZACAO){
+		
 	//Se não existem erros no sistema relacionados a inicialização
 	//dos dispositivos, fazer:
 	
-    if(erro == 0){
-	
+	if(!erro){
+		
 	//Verifica os botões e trata o clique simples e o clique longo
 	//como controle de início/fim da gravação.
     leBotoes();
@@ -98,17 +111,22 @@ void loop() {
 	//De acordo com os dados recebidos, verifica condições como a
 	//altura máxima atingida e seta variáveis de controle de modo
 	//que ações consequintes sejam tomadas.
-    checaCondições();
+    checaCondicoes();
 	
-	//Faz 
+	//Faz ajustes finais necessários
     finaliza();
 	
 	//Caso o voo tenha chegado ao ápice, libera o sistema de recuperação
     recupera();
-    }
+	}
 	
 	//Notifica via LEDs e buzzer problemas com o foguete 
     notifica();
+	
+	atualizaMillis = millisAtual;
+    }
+	
+	
 	
     
     
@@ -142,86 +160,6 @@ void inicializa(){
   
 }
 
-void notifica (char codigo){
-
-  switch codigo{
-
-	//Problema com o BMP180
-    case ERRO_BMP:
-	if(millisAtual - millisLed	> 100)
-		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
-
-	break;
-	
-	//Problema com o Gyro/Acelerômetro 
-	case ERRO_MPU:
-	if(millisAtual - millisLed	> 100)
-		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
-
-	break;
-	
-	//Problema com o SD
-	case ERRO_SD:
-	if(millisAtual - millisLed	> 100)
-		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
-
-	break;
-	
-	case ESTADO_FINALIZADO:
-	if(millisAtual - millisLed	> 100)
-		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
-
-	break;
-	
-	case ESTADO_GRAVANDO:
-	if(millisAtual - millisLed	> 100)
-		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
-
-	break;
-	
-	default:
-	//led piscando devagar indicando espera
-	if(millisAtual - millisLed	> 500)
-		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
-		
-	
-	break;
-	
-	
-  }
-
-}
-
-void recupera (){
-	
-	//verifica aqui se o foguete já atingiu o apogeu e se está descendo pelas
-	//suas variáveis globais de controle e chama a função que faz o acionamento
-	//do paraquedas
-	
-	if(apogeu && descendo){
-	
-	abreParaquedas();
-	
-	}
-}
-
-void adquireDados(){
-	
-	//todas as medidas são feitas aqui em sequeência de maneira que os valores
-	//sejam temporalmente próximos
-	pressaoAtual = bmp.readPressure();
-    alturaAltual = bmp.readAltitude(PRESSAO_MAR);
-	
-	aceleracaoAtual[EIXO_X] = ;
-	aceleracaoAtual[EIXO_Y] = ;
-	aceleracaoAtual[EIXO_Z] = ;
-	
-	angulacaoAtual[EIXO_X] = ;
-	angulacaoAtual[EIXO_Y] = ;
-	angulacaoAtual[EIXO_Z] = ;
-	
-}
-
 void leBotoes(){
 	bool estado;
 	millisAtual = millis();
@@ -249,9 +187,20 @@ void leBotoes(){
 	
 }
 
-void abreParaquedas(){
+void adquireDados(){
 	
-	paraquedas.write(SERVO_ABERTO);
+	//todas as medidas são feitas aqui em sequeência de maneira que os valores
+	//sejam temporalmente próximos
+	pressaoAtual = bmp.readPressure();
+    alturaAltual = bmp.readAltitude(PRESSAO_MAR);
+	
+	aceleracaoAtual[EIXO_X] = ;
+	aceleracaoAtual[EIXO_Y] = ;
+	aceleracaoAtual[EIXO_Z] = ;
+	
+	angulacaoAtual[EIXO_X] = ;
+	angulacaoAtual[EIXO_Y] = ;
+	angulacaoAtual[EIXO_Z] = ;
 	
 }
 
@@ -321,9 +270,94 @@ void trataDados(){
 	
 }
 
-void checaCondições(){
-	if
+void gravaDados(){
+	
 }
+
+void checaCondicoes(){
+	
+	if(mediaAltura > alturaMaxima)
+		alturaMaxima =  mediaAltura;
+	
+	if(mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)
+		descendo = true;
+
+}
+
+void finaliza(){
+}
+
+void recupera (){
+	
+	//verifica aqui se o foguete já atingiu o apogeu e se está descendo pelas
+	//suas variáveis globais de controle e chama a função que faz o acionamento
+	//do paraquedas
+	
+	if(apogeu && descendo){
+	
+	abreParaquedas();
+	
+	}
+}
+
+void notifica (char codigo){
+
+  switch codigo{
+
+	//Problema com o BMP180
+    case ERRO_BMP:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	//Problema com o Gyro/Acelerômetro 
+	case ERRO_MPU:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	//Problema com o SD
+	case ERRO_SD:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	case ESTADO_FINALIZADO:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	case ESTADO_GRAVANDO:
+	if(millisAtual - millisLed	> 100)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+
+	break;
+	
+	default:
+	//led piscando devagar indicando espera
+	if(millisAtual - millisLed	> 500)
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+		
+	
+	break;
+	
+	
+  }
+
+}
+
+void abreParaquedas(){
+	
+	paraquedas.write(SERVO_ABERTO);
+	
+}
+
+
+
 
 
 	
