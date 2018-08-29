@@ -276,11 +276,16 @@ void gravaDados(){
 
 void checaCondicoes(){
 	
+	//verificar a altura máxima 
 	if(mediaAltura > alturaMaxima)
 		alturaMaxima =  mediaAltura;
 	
+	//Controle de descida, usando um threshold para evitar disparos não
+	//intencionais
 	if(mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)
 		descendo = true;
+	
+	if(descendo)
 
 }
 
