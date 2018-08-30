@@ -1,10 +1,13 @@
-#include <BlockDriver.h>
-#include <FreeStack.h>
-#include <MinimumSerial.h>
-#include <SdFat.h>
-#include <SdFatConfig.h>
-#include <sdios.h>
-#include <SysCall.h>
+/*
+
+
+
+
+
+*/
+
+#include <SPI.h>
+#include <SD.h>
 #include <Adafruit_BMP085.h>
 
 //Definições default
@@ -39,6 +42,9 @@ Adafruit_BMP085 bmp;
 SdFat sd;
 SdFile arquivo;
 Servo paraquedas;
+const int chipSelect = 4;
+string nomeBase = "dataLog";
+string nomeConcat;
 
 //Variáveis de timing
 int     millisAtual		= 0;
@@ -46,6 +52,7 @@ int     millisUltimo	= 0;
 int		millisLed		= 0;
 int 	millisBuzzer	= 0;
 int		millisBotao		= 0;
+int 	millisGravacao	= 0;
 
 //Variáveis de dados
 int32_t pressaoAtual;
@@ -58,6 +65,8 @@ float	angulacaoAtual[3];	//em [x,y,z]
 float	vetorAltura[10];
 float	vetorAceleracao[3][10];
 float	vetorAngulacao[3][10];
+
+string stringDados;
 
 //variáveis de controle
 
@@ -154,6 +163,32 @@ void inicializa(){
 
   
   //inicializar o cartão SD
+  if (!SD.begin(chipSelect)) {
+    
+    erro = ERRO_SD;
+	
+    return;
+  }
+  else{
+	 int n = 1;
+	 bool parar = FALSE;
+	  
+	  
+	  
+	  while(!parar)
+	  {
+		  sprintf(nomeConcat,"dataLog%d",n);
+		  if(SD.exists(nomeConcat)
+			  n++;
+		  else
+			  parar = TRUE;  
+	  }
+	  
+	  File arquivoLog = SD.open(nomeConcat, FILE_WRITE);
+		  
+  }
+  
+  
 
   
   }
@@ -271,6 +306,30 @@ void trataDados(){
 }
 
 void gravaDados(){
+	
+	if((estado == ESTADO_GRAVANDO) && arquivoLog){
+	String stringDados = "";
+	
+		millisGravacao = millis();
+		stringDados += String(millisGravacao);
+		stringDados += ",";
+		stringDados += String(mediaAltura);
+		stringDados += ",";
+		stringDados += String(mediaAceleracao[EIXO_X]);
+		stringDados += ",";
+		stringDados += String(mediaAceleracao[EIXO_Y]);
+		stringDados += ",";
+		stringDados += String(mediaAceleracao[EIXO_Z]);
+		stringDados += ",";
+		stringDados += String(mediaAngulacao[EIXO_X]);
+		stringDados += ",";
+		stringDados += String(mediaAngulacao[EIXO_Y]);
+		stringDados += ",";
+		stringDados += String(mediaAngulacao[EIXO_Z]);
+		
+	arquivoLog.println(dstringDados);
+    arquivoLog.close();	
+	}
 	
 }
 
