@@ -1,4 +1,4 @@
-/*
+/*###### ALTÍMETRO SUPERNOVA #######
 
 
 
@@ -6,9 +6,17 @@
 
 */
 
+
+#include "I2Cdev.h"
 #include <SPI.h>
 #include <SD.h>
 #include <Adafruit_BMP085.h>
+#include "MPU6050_6Axis_MotionApps20.h"
+#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+    #include "Wire.h"
+#endif
+
+
 
 //Definições default
 #define PRESSAO_MAR 101500
@@ -45,6 +53,7 @@ Servo paraquedas;
 const int chipSelect = 4;
 string nomeBase = "dataLog";
 string nomeConcat;
+MPU6050 mpu;
 
 //Variáveis de timing
 int     millisAtual		= 0;
@@ -75,6 +84,7 @@ bool    terminou = false;
 bool    rodando = false;
 bool 	emVoo = false;
 bool    apogeu = false;
+bool	abriuParaquedas = false;
 char    erro = false;
 char	statusAtual;
 
@@ -193,6 +203,8 @@ void inicializa(){
   
   }
   
+  statusAtual = ESTADO_ESPERA;
+  
 }
 
 void leBotoes(){
@@ -307,6 +319,10 @@ void trataDados(){
 
 void gravaDados(){
 	
+	//verifica aqui o estado do foguete e também se o arquivo está aberto e pronto 
+	//para ser usado. Aqui, todos os dados são concatenados em uma string que dá
+	//o formato das linhas do arquivo de log.
+	
 	if((estado == ESTADO_GRAVANDO) && arquivoLog){
 	String stringDados = "";
 	
@@ -344,7 +360,11 @@ void checaCondicoes(){
 	if(mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)
 		descendo = true;
 	
-	if(descendo)
+	//verifica se o foguete voltou ao chão dado que não existem mais acelerações
+	//agindo em cima do mesmo.
+	if(/*acelerações todas == 0*/){
+		
+	}
 
 }
 
@@ -357,7 +377,7 @@ void recupera (){
 	//suas variáveis globais de controle e chama a função que faz o acionamento
 	//do paraquedas
 	
-	if(apogeu && descendo){
+	if((apogeu && descendo) && !abriuParaquedas){
 	
 	abreParaquedas();
 	
@@ -365,44 +385,60 @@ void recupera (){
 }
 
 void notifica (char codigo){
-
+	unsigned int frequencia[10];
+	//os tons aqui são tocados por um vetor que contem as frequências. Cada
+	//slot do mesmo define um espaço de 100ms. 
   switch codigo{
 
 	//Problema com o BMP180
+	//Ambos os leds piscando juntos + tom de erro
     case ERRO_BMP:
-	if(millisAtual - millisLed	> 100)
+	frequencia = (261,261,0,0,220,220,0,0,196,196);
+	if(millisAtual - millisLed	> 100){
 		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
+	}
 
 	break;
 	
-	//Problema com o Gyro/Acelerômetro 
+	//Problema com o Gyro/Acelerômetro
+	//Led1 (verde) piscando junto com o tom de erro	
 	case ERRO_MPU:
+	frequencia = (261,261,0,0,220,220,0,0,196,196);
 	if(millisAtual - millisLed	> 100)
 		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
 
 	break;
 	
 	//Problema com o SD
+	//led vermelho piscando junto com o tom de erro
 	case ERRO_SD:
+	frequencia = (261,261,0,0,220,220,0,0,196,196);
 	if(millisAtual - millisLed	> 100)
-		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
 
 	break;
 	
+	//Estado onde o voo já terminou e faz um tom de recuperação
+	//led verde pisca rápido também
 	case ESTADO_FINALIZADO:
+	frequencia = (4000,4500,4000,0,0,0,0,0,0,0);
 	if(millisAtual - millisLed	> 100)
 		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
 
 	break;
 	
+	//Gravando, pisca um led vermelho como uma câmera e também faz
+	//um tom simples.
 	case ESTADO_GRAVANDO:
+	frequencia = (293,293,0,0,0,0,0,0,0,0);
 	if(millisAtual - millisLed	> 100)
-		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+		digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
 
 	break;
 	
 	default:
-	//led piscando devagar indicando espera
+	//led verde piscando devagar indicando espera
 	if(millisAtual - millisLed	> 500)
 		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
 		
@@ -412,11 +448,22 @@ void notifica (char codigo){
 	
   }
 
+	//Lê o vetor de frequencias e toca a frequência na posição atual
+	//voltando ao inicio do mesmo quando termina, assim tocando todos os tons
+	
+  if(codigo){
+  Tone(PINO_BUZZER, frequencia, 100);
+  n++;
+  if(n>9)
+	n = 0;
+  }
 }
+
 
 void abreParaquedas(){
 	
 	paraquedas.write(SERVO_ABERTO);
+	abriuParaquedas = 1;
 	
 }
 
