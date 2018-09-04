@@ -11,11 +11,18 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Adafruit_BMP085.h>
-#include "MPU6050_6Axis_MotionApps20.h"
+
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
     #include "Wire.h"
 #endif
 
+//Definições de debug
+#define DEBUG
+
+//Definições de sensores
+
+#define USANDO_BMP180
+//#define	USANDO_MPU6050
 
 
 //Definições default
@@ -23,6 +30,8 @@
 #define EIXO_X 0
 #define EIXO_Y 1
 #define EIXO_Z 2
+
+#define TAMANHO_MEDIA 10
 
 
 #define TEMPO_ATUALIZACAO 50 //em milisegundos
@@ -53,7 +62,6 @@ Servo paraquedas;
 const int chipSelect = 4;
 string nomeBase = "dataLog";
 string nomeConcat;
-MPU6050 mpu;
 
 //Variáveis de timing
 int     millisAtual		= 0;
@@ -68,12 +76,17 @@ int32_t pressaoAtual;
 float   alturaAltual;
 float   alturaInicial;
 float   alturaMaxima =  0;
+float	vetorAltura[10];
+
+#ifdef USANDO_MPU6050
 float 	aceleracaoAtual[3]; //em [x,y,z]
 float	angulacaoAtual[3];	//em [x,y,z]
-
-float	vetorAltura[10];
 float	vetorAceleracao[3][10];
 float	vetorAngulacao[3][10];
+#endif
+
+
+
 
 string stringDados;
 
@@ -92,10 +105,93 @@ char	statusAtual;
 
 void setup() {
 	
+	#ifdef DEBUG
+	Serial.begin(9600);
+	#endif
+	
 	//Faz o setup inicial dos sensores de movimento e altura assim
 	//como as portas 
+	
+	#ifdef DEBUG
+	Serial.println("Iniciando o altímetro");
+	#endif
+	
 	inicializa();
 
+}
+
+void inicializa(){
+
+  //Inicializando as portas 
+  pinMode(PINO_BOTAO, INPUT);
+  pinMode(PINO_BUZZER, OUTPUT);
+  pinMode(PINO_LED1, OUTPUT);
+  pinMode(PINO_LED2, OUTPUT);
+
+  erro = 0;
+  
+  //Inicializando o Altímetro
+  if (!bmp.begin()) {
+  erro = ERRO_BMP;
+  }
+  
+  //iniciar o IMU
+  
+  #ifdef USANDO_MPU6050
+  if(!IMU){
+	  
+	erro = ERRO_MPU;
+  }
+	#endif
+  
+  //inicializar o cartão SD
+  if (!SD.begin(chipSelect)) {
+    
+    erro = ERRO_SD;
+	
+    return;
+  }
+  else if(!erro){
+	 int n = 1;
+	 bool parar = FALSE;
+	  
+	  
+	  while(!parar)
+	  {
+		  sprintf(nomeConcat,"dataLog%d",n);
+		  if(SD.exists(nomeConcat)
+			  n++;
+		  else
+			  parar = TRUE;  
+	  }
+	  
+	  File arquivoLog = SD.open(nomeConcat, FILE_WRITE);
+	  #ifdef DEBUG
+		Serial.print("Salvando os dados no arquivo ");
+		Serial.println(nomeConcat);
+		#endif
+		  
+  }
+  
+  
+
+  
+  }
+  
+  if(!erro){
+	 #ifdef DEBUG
+	Serial.println("Nenhum erro iniciando dispositivos, começando o loop do main");
+	#endif
+	  statusAtual = ESTADO_ESPERA;
+  }
+  
+  else{
+	  #ifdef DEBUG
+	Serial.println("Altímetro com erro de inicialização código: %c", erro);
+	#endif
+  statusAtual = erro;
+  }
+  
 }
 
 void loop() {
@@ -105,10 +201,12 @@ void loop() {
 	millisAtual = millis();
 	
 	
-	
-	
     if((atualizaMillis - millisAtual) >= TEMPO_ATUALIZACAO){
 		
+	//verifica se existem erros e mantém tentando inicializar
+	if(erro)
+		inicializa();
+	
 	//Se não existem erros no sistema relacionados a inicialização
 	//dos dispositivos, fazer:
 	
@@ -140,7 +238,7 @@ void loop() {
 	}
 	
 	//Notifica via LEDs e buzzer problemas com o foguete 
-    notifica();
+    notifica(statusAtual);
 	
 	atualizaMillis = millisAtual;
     }
@@ -151,62 +249,6 @@ void loop() {
     
 }
 
-
-void inicializa(){
-
-  //Inicializando as portas 
-  pinMode(PINO_BOTAO, INPUT);
-  pinMode(PINO_BUZZER, OUTPUT);
-  pinMode(PINO_LED1, OUTPUT);
-  pinMode(PINO_LED2, OUTPUT);
-
-  while(erro == 1){
-
-  erro = 1;
-  
-  //Inicializando o Altímetro
-  if (!bmp.begin()) {
-  erro = ERRO_BMP;
-  }
-  
-  //iniciar o IMU
-
-  
-  //inicializar o cartão SD
-  if (!SD.begin(chipSelect)) {
-    
-    erro = ERRO_SD;
-	
-    return;
-  }
-  else{
-	 int n = 1;
-	 bool parar = FALSE;
-	  
-	  
-	  
-	  while(!parar)
-	  {
-		  sprintf(nomeConcat,"dataLog%d",n);
-		  if(SD.exists(nomeConcat)
-			  n++;
-		  else
-			  parar = TRUE;  
-	  }
-	  
-	  File arquivoLog = SD.open(nomeConcat, FILE_WRITE);
-		  
-  }
-  
-  
-
-  
-  }
-  
-  statusAtual = ESTADO_ESPERA;
-  
-}
-
 void leBotoes(){
 	bool estado;
 	millisAtual = millis();
@@ -215,6 +257,9 @@ void leBotoes(){
 	//Liga a gravação se em espera
 	if(estado && (statusAtual == ESTADO_ESPERA)){
 		statusAtual = ESTADO_GRAVANDO;
+		#ifdef DEBUG
+		Serial.println("Iniciando a gravação");
+		#endif
 		
 	}
 	
@@ -228,8 +273,12 @@ void leBotoes(){
 	millisBotao = 0;
 	}
 	
-	if(millisAtual - millisBotao >= 2000)
+	if(millisAtual - millisBotao >= 2000){
+		#ifdef DEBUG
+		Serial.println("Terminanado a gravação e voltando a espera");
+		#endif
 		statusAtual = ESTADO_ESPERA;
+	}
 	
 	
 }
@@ -241,6 +290,7 @@ void adquireDados(){
 	pressaoAtual = bmp.readPressure();
     alturaAltual = bmp.readAltitude(PRESSAO_MAR);
 	
+	#ifdef USANDO_MPU6050
 	aceleracaoAtual[EIXO_X] = ;
 	aceleracaoAtual[EIXO_Y] = ;
 	aceleracaoAtual[EIXO_Z] = ;
@@ -248,6 +298,7 @@ void adquireDados(){
 	angulacaoAtual[EIXO_X] = ;
 	angulacaoAtual[EIXO_Y] = ;
 	angulacaoAtual[EIXO_Z] = ;
+	#endif
 	
 }
 
@@ -257,6 +308,7 @@ void trataDados(){
 	
 	vetorAltura [n] = alturaAltual;
 	
+	#ifdef USANDO_MPU6050
 	vetorAceleracao [EIXO_X][n] = aceleracaoAtual[EIXO_X];
 	vetorAceleracao [EIXO_Y][n] = aceleracaoAtual[EIXO_Y];
 	vetorAceleracao [EIXO_Z][n] = aceleracaoAtual[EIXO_Z];
@@ -264,14 +316,15 @@ void trataDados(){
 	vetorAngulacao [EIXO_X][n] = angulacaoAtual[EIXO_X];
 	vetorAngulacao [EIXO_Y][n] = angulacaoAtual[EIXO_Y];
 	vetorAngulacao [EIXO_Z][n] = angulacaoAtual[EIXO_Z];
+	#endif
 	
 	//otimizar isso aqui depois
-	for(int i = 0; i<10;i++){
+	for(int i = 0; i<TAMANHO_MEDIA;i++){
 		
 		if(i = 0){
 			
 		mediaAltura = 0;
-		
+		#ifdef USANDO_MPU6050
 		mediaAceleracao[EIXO_X] = 0;
 		mediaAceleracao[EIXO_Y] = 0;
 		mediaAceleracao[EIXO_Z] = 0;
@@ -279,11 +332,12 @@ void trataDados(){
 		mediaAngulacao[EIXO_X] = 0;
 		mediaAngulacao[EIXO_Y] = 0; 
 		mediaAngulacao[EIXO_Z] = 0;
+		#endif
 			
 		}
 		
 		mediaAltura += vetorAltura[i];
-		
+		#ifdef USANDO_MPU6050
 		mediaAceleracao[EIXO_X] += vetorAceleracao[EIXO_X][i];
 		mediaAceleracao[EIXO_Y] += vetorAceleracao[EIXO_Y][i];
 		mediaAceleracao[EIXO_Z] += vetorAceleracao[EIXO_Z][i];
@@ -291,26 +345,29 @@ void trataDados(){
 		mediaAngulacao[EIXO_X] += vetorAngulacao[EIXO_X][i];
 		mediaAngulacao[EIXO_Y] += vetorAngulacao[EIXO_Y][i];
 		mediaAngulacao[EIXO_Z] += vetorAngulacao[EIXO_Z][i];
+		#endif
 		
 		
 	}
 	
 	//Variáveis finais prontas para serem salvas
-	mediaAltura = mediaAltura/10;
+	mediaAltura = mediaAltura/TAMANHO_MEDIA;
 	
-	mediaAceleracao[EIXO_X] = mediaAceleracao[EIXO_X] /10;
-	mediaAceleracao[EIXO_Y] = mediaAceleracao[EIXO_Y] /10;
-	mediaAceleracao[EIXO_Z] = mediaAceleracao[EIXO_Z] /10;
+	#ifdef USANDO_MPU6050
+	mediaAceleracao[EIXO_X] = mediaAceleracao[EIXO_X] /TAMANHO_MEDIA;
+	mediaAceleracao[EIXO_Y] = mediaAceleracao[EIXO_Y] /TAMANHO_MEDIA;
+	mediaAceleracao[EIXO_Z] = mediaAceleracao[EIXO_Z] /TAMANHO_MEDIA;
 	
-	mediaAngulacao[EIXO_X] = mediaAngulacao[EIXO_X]/10;
-	mediaAngulacao[EIXO_Y] = mediaAngulacao[EIXO_Y]/10;
-	mediaAngulacao[EIXO_Z] = mediaAngulacao[EIXO_Z]/10;
+	mediaAngulacao[EIXO_X] = mediaAngulacao[EIXO_X]/TAMANHO_MEDIA;
+	mediaAngulacao[EIXO_Y] = mediaAngulacao[EIXO_Y]/TAMANHO_MEDIA;
+	mediaAngulacao[EIXO_Z] = mediaAngulacao[EIXO_Z]/TAMANHO_MEDIA;
+	#endif
 	
 	
 	
 	n++;
 	
-	if(n>9)
+	if(n>=TAMANHO_MEDIA)
 		n=0;
 	
 	
@@ -330,6 +387,8 @@ void gravaDados(){
 		stringDados += String(millisGravacao);
 		stringDados += ",";
 		stringDados += String(mediaAltura);
+		
+		#ifdef USANDO_MPU6050
 		stringDados += ",";
 		stringDados += String(mediaAceleracao[EIXO_X]);
 		stringDados += ",";
@@ -342,6 +401,7 @@ void gravaDados(){
 		stringDados += String(mediaAngulacao[EIXO_Y]);
 		stringDados += ",";
 		stringDados += String(mediaAngulacao[EIXO_Z]);
+		#endif
 		
 	arquivoLog.println(dstringDados);
     arquivoLog.close();	
@@ -359,12 +419,6 @@ void checaCondicoes(){
 	//intencionais
 	if(mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)
 		descendo = true;
-	
-	//verifica se o foguete voltou ao chão dado que não existem mais acelerações
-	//agindo em cima do mesmo.
-	if(/*acelerações todas == 0*/){
-		
-	}
 
 }
 
@@ -375,13 +429,16 @@ void recupera (){
 	
 	//verifica aqui se o foguete já atingiu o apogeu e se está descendo pelas
 	//suas variáveis globais de controle e chama a função que faz o acionamento
-	//do paraquedas
-	
-	if((apogeu && descendo) && !abriuParaquedas){
+	//do paraquedas	
+	if(descendo && !abriuParaquedas){
 	
 	abreParaquedas();
 	
 	}
+	
+	estado
+	
+	
 }
 
 void notifica (char codigo){
@@ -421,7 +478,7 @@ void notifica (char codigo){
 	
 	//Estado onde o voo já terminou e faz um tom de recuperação
 	//led verde pisca rápido também
-	case ESTADO_FINALIZADO:
+	case ESTADO_RECUPERANDO:
 	frequencia = (4000,4500,4000,0,0,0,0,0,0,0);
 	if(millisAtual - millisLed	> 100)
 		digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
@@ -461,7 +518,9 @@ void notifica (char codigo){
 
 
 void abreParaquedas(){
-	
+	#ifdef DEBUG
+		Serial.println("Abrindo o paraquedas!");
+		#endif
 	paraquedas.write(SERVO_ABERTO);
 	abriuParaquedas = 1;
 	
