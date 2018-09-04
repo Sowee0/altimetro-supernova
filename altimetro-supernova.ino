@@ -154,7 +154,7 @@ void inicializa() {
   pinMode(PINO_LED2, OUTPUT);
   
   //iniciando o servo
-  myservo.attach(PINO_SERVO);
+  paraquedas.attach(PINO_SERVO);
 
   erro = 0;
 
