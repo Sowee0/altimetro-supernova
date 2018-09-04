@@ -40,10 +40,11 @@
 
 
 //Definições de input
-#define PINO_BUZZER 4
+#define PINO_BUZZER 2
 #define PINO_BOTAO 5
 #define PINO_LED1 3
 #define PINO_LED2 6
+#define PINO_SERVO 7
 
 //definições de erros
 #define ERRO_BMP 'b'
@@ -151,6 +152,9 @@ void inicializa() {
   pinMode(PINO_BUZZER, OUTPUT);
   pinMode(PINO_LED1, OUTPUT);
   pinMode(PINO_LED2, OUTPUT);
+  
+  //iniciando o servo
+  myservo.attach(PINO_SERVO);
 
   erro = 0;
 
