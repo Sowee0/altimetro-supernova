@@ -18,6 +18,7 @@
 
 //Definições de debug
 //#define DEBUG
+#define DEBUG_TEMP
 
 //Definições de sensores
 
@@ -41,8 +42,8 @@
 
 //Definições de input
 #define PINO_BUZZER 3
-#define PINO_BOTAO 5
-#define PINO_LED_VERD 2
+#define PINO_BOTAO 2
+#define PINO_LED_VERD 5
 #define PINO_LED_VERM 6
 #define PINO_SERVO 7
 #define PINO_SD_CS 4
@@ -75,6 +76,8 @@ int 	millisBuzzer	= 0;
 int		millisBotao		= 0;
 int 	millisGravacao	= 0;
 int n = 0;
+int m = 0;
+int o =  0;
 int IMU = 1;
 
 //Variáveis de dados
@@ -134,6 +137,11 @@ void setup() {
 #ifdef DEBUG
   Serial.begin(115200);
 #endif
+
+#ifdef DEBUG_TEMP
+  Serial.begin(115200);
+  paraquedas.write(0);
+#endif
   //Faz o setup inicial dos sensores de movimento e altura assim
   //como as portas
 
@@ -167,16 +175,7 @@ void inicializa() {
 
 #ifdef USANDO_IMU
   if (IMU) {
-	double pitch = atan(accX/sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG;
-  double roll = atan(accY/sqrt(accX * accX + accZ * accZ)) * RAD_TO_DEG;
-  double yaw = atan(accZ/sqrt(accX * accX + accY * accY)) * RAD_TO_DEG;
-  KalmanX.setAngle(roll);
-  KalmanY.setAngle(pitch);
-  KalmanZ.setAngle(yaw);
-  gyroXangle = roll;
-  gyroYangle = pitch;
-  gyroZangle = yaw;
-  timer = micros();
+	
   
     erro = ERRO_MPU;
   }
@@ -196,6 +195,9 @@ void inicializa() {
 
     while (!parar)
     {
+		#ifdef DEBUG_TEMP
+		Serial.println("não deveria estar aqui com o sd ligado");
+		#endif
       sprintf(nomeConcat, "dataLog%d", n);
       if (SD.exists(nomeConcat))
           n++;
@@ -229,6 +231,7 @@ else {
   atualizaMillis = millis();
 }
 
+
 }
 
 void loop() {
@@ -238,12 +241,21 @@ void loop() {
   millisAtual = millis();
   
   
+		
+		
 
   if ((millisAtual - atualizaMillis) >= TEMPO_ATUALIZACAO) {
-
+	#ifdef DEBUG_TEMP
+		Serial.print("Status atual:");
+		Serial.println(statusAtual);
+		Serial.print("estado atual de erro:");
+		Serial.println(erro);
+		#endif
     //verifica se existem erros e mantém tentando inicializar
-    if (erro)
+    if (erro){
       inicializa();
+	  notifica(erro);
+	}
 
     //Se não existem erros no sistema relacionados a inicialização
     //dos dispositivos, fazer:
@@ -321,7 +333,7 @@ void adquireDados() {
 
   //todas as medidas são feitas aqui em sequeência de maneira que os valores
   //sejam temporalmente próximos
-  pressaoAtual = bmp.readPressure();
+  //pressaoAtual = bmp.readPressure();
   alturaAltual = bmp.readAltitude(PRESSAO_MAR);
 
 #ifdef USANDO_IMU
@@ -351,16 +363,16 @@ void trataDados() {
 
   //o tratamento dos dados aqui é até o momento somente uma média rolante
 
-  vetorAltura [n] = alturaAltual;
+  vetorAltura [m] = alturaAltual;
 
 #ifdef USANDO_IMU
-  vetorAceleracao [EIXO_X][n] = aceleracaoAtual[EIXO_X];
-  vetorAceleracao [EIXO_Y][n] = aceleracaoAtual[EIXO_Y];
-  vetorAceleracao [EIXO_Z][n] = aceleracaoAtual[EIXO_Z];
+  vetorAceleracao [EIXO_X][m] = aceleracaoAtual[EIXO_X];
+  vetorAceleracao [EIXO_Y][m] = aceleracaoAtual[EIXO_Y];
+  vetorAceleracao [EIXO_Z][m] = aceleracaoAtual[EIXO_Z];
 
-  vetorAngulacao [EIXO_X][n] = angulacaoAtual[EIXO_X];
-  vetorAngulacao [EIXO_Y][n] = angulacaoAtual[EIXO_Y];
-  vetorAngulacao [EIXO_Z][n] = angulacaoAtual[EIXO_Z];
+  vetorAngulacao [EIXO_X][m] = angulacaoAtual[EIXO_X];
+  vetorAngulacao [EIXO_Y][m] = angulacaoAtual[EIXO_Y];
+  vetorAngulacao [EIXO_Z][m] = angulacaoAtual[EIXO_Z];
 #endif
 
   //otimizar isso aqui depois
@@ -410,10 +422,10 @@ void trataDados() {
 
 
 
-  n++;
+  m++;
 
-  if (n >= TAMANHO_MEDIA)
-    n = 0;
+  if (m >= TAMANHO_MEDIA)
+    m = 0;
 
 
 
@@ -427,15 +439,17 @@ void gravaDados() {
 
   if ((statusAtual == ESTADO_GRAVANDO)) {
     arquivoLog = SD.open(nomeConcat, FILE_WRITE);
-	#ifdef DEBUG
+	#ifdef DEBUG_TEMP
 	Serial.println("Estou gravando!");
+	paraquedas.write(SERVO_ABERTO);
 	#endif
 	stringDados = "";
     millisGravacao = millis();
     stringDados += millisGravacao;
     stringDados += ",";
     stringDados += mediaAltura;
-
+	stringDados += ",";
+    
 #ifdef USANDO_IMU
     stringDados += ",";
     stringDados += String(mediaAceleracao[EIXO_X]);
@@ -491,6 +505,7 @@ void recupera () {
 }
 
 void notifica (char codigo) {
+	
   unsigned int frequencia[10];
   //os tons aqui são tocados por um vetor que contem as frequências. Cada
   //slot do mesmo define um espaço de 100ms.
@@ -559,7 +574,7 @@ void notifica (char codigo) {
       frequencia[8] = 196;
       frequencia[9] = 196;
       if (millisAtual - millisLed	> 100){
-        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERM));
+        digitalWrite(PINO_LED_VERM, !digitalRead(PINO_LED_VERM));
 		millisLed = millisAtual;
 	  }
 
@@ -607,7 +622,7 @@ void notifica (char codigo) {
 
       break;
 
-    default:
+    case ESTADO_ESPERA:
       //led verde piscando devagar indicando espera
       if (millisAtual - millisLed	> 500){
         digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
@@ -623,12 +638,19 @@ void notifica (char codigo) {
   //Lê o vetor de frequencias e toca a frequência na posição atual
   //voltando ao inicio do mesmo quando termina, assim tocando todos os tons
 
-  if (codigo) {
-    tone(PINO_BUZZER, frequencia[n], 100);
-    n++;
-    if (n > 9)
-      n = 0;
-  }
+  /* if (codigo) {
+    tone(PINO_BUZZER, frequencia[o], TEMPO_ATUALIZACAO);
+    o++;
+    if (o > 9)
+      o = 0; 
+  }*/
+ 
+  
+  #ifdef DEBUG_TEMP
+    Serial.print("tocando a posição do vetor:");
+	Serial.println(o);
+
+#endif
 }
 
 
