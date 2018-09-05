@@ -306,35 +306,13 @@ void loop() {
 }
 
 void leBotoes() {
-  bool estado;
+  
   millisAtual = millis();
   estado = digitalRead(PINO_BOTAO);
 
   //Liga a gravação se em espera
   if (estado && (statusAtual == ESTADO_ESPERA)) {
     statusAtual = ESTADO_GRAVANDO;
-#ifdef DEBUG
-    Serial.println("Iniciando a gravação");
-#endif
-
-  }
-
-  //Desliga a gravação se gravando e o botão for segurado por 2s
-  if ((statusAtual == ESTADO_GRAVANDO) && (estado && millisBotao == 0) ){
-
-  millisBotao = millis();
-
-  }
-  else if ((statusAtual == ESTADO_GRAVANDO) && !estado) {
-  millisBotao = 0;
-}
-
-if (millisAtual - millisBotao >= 2000) {
-#ifdef DEBUG
-  Serial.println("Terminanado a gravação e voltando a espera");
-#endif
-    statusAtual = ESTADO_ESPERA;
-  }
 
 
 }
