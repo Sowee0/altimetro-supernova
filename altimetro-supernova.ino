@@ -17,7 +17,7 @@
 #endif
 
 //Definições de debug
-#define DEBUG
+//#define DEBUG
 
 //Definições de sensores
 
@@ -132,7 +132,7 @@ bool descendo = false;
 void setup() {
 
 #ifdef DEBUG
-  Serial.begin(9600);
+  Serial.begin(115200);
 #endif
   //Faz o setup inicial dos sensores de movimento e altura assim
   //como as portas
@@ -249,19 +249,36 @@ void loop() {
     //dos dispositivos, fazer:
 
     if (!erro) {
+		
+		#ifdef DEBUG
+		Serial.println("Rodando o loop de funções");
+		#endif
 
       //Verifica os botões e trata o clique simples e o clique longo
       //como controle de início/fim da gravação.
       leBotoes();
+	  
+	  #ifdef DEBUG
+	Serial.println("Li os botões");
+	  #endif
 
       //Recebe os dados dos sensores e os deixa salvo em variáveis
       adquireDados();
+		#ifdef DEBUG
+		Serial.println("Adquiri os dados");
+		#endif
 
       //Trata os dados, fazendo filtragens e ajustes.
       trataDados();
+		#ifdef DEBUG
+		Serial.println("Tratei os dados");
+		#endif
 
       //Se a gravação estiver ligada, grava os dados.
       gravaDados();
+		#ifdef DEBUG
+		Serial.println("Gravei os dados");
+		#endif
 
       //De acordo com os dados recebidos, verifica condições como a
       //altura máxima atingida e seta variáveis de controle de modo
@@ -492,6 +509,12 @@ void notifica (char codigo) {
   unsigned int frequencia[10];
   //os tons aqui são tocados por um vetor que contem as frequências. Cada
   //slot do mesmo define um espaço de 100ms.
+  
+  #ifdef DEBUG
+  Serial.print("Status atual do altímetro:");
+  Serial.println(codigo);
+#endif
+
   switch (codigo){
 
     //Problema com o BMP180
