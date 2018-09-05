@@ -616,7 +616,7 @@ void notifica (char codigo) {
       frequencia[8] = 0;
       frequencia[9] = 0;
       if (millisAtual - millisLed	> 100){
-        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERM));
+        digitalWrite(PINO_LED_VERM, !digitalRead(PINO_LED_VERM));
 		millisLed = millisAtual;
 	  }
 
