@@ -534,6 +534,7 @@ void notifica (char codigo) {
       if (millisAtual - millisLed	> 100) {
         digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
         digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
+		millisLed = millisAtual;
       }
 
       break;
@@ -551,8 +552,10 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 196;
       frequencia[9] = 196;
-      if (millisAtual - millisLed	> 100)
+      if (millisAtual - millisLed	> 100){
         digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+		millisLed = millisAtual;
+	  }
 
       break;
 
@@ -570,8 +573,10 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 196;
       frequencia[9] = 196;
-      if (millisAtual - millisLed	> 100)
+      if (millisAtual - millisLed	> 100){
         digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
+		millisLed = millisAtual;
+	  }
 
       break;
 
@@ -589,8 +594,10 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 0;
       frequencia[9] = 0;
-      if (millisAtual - millisLed	> 100)
+      if (millisAtual - millisLed	> 100){
         digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+		millisLed = millisAtual;
+	  }
 
       break;
 
@@ -608,15 +615,19 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 0;
       frequencia[9] = 0;
-      if (millisAtual - millisLed	> 100)
+      if (millisAtual - millisLed	> 100){
         digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
+		millisLed = millisAtual;
+	  }
 
       break;
 
     default:
       //led verde piscando devagar indicando espera
-      if (millisAtual - millisLed	> 500)
+      if (millisAtual - millisLed	> 500){
         digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+		millisLed = millisAtual;
+	  }
 
 
       break;
