@@ -17,7 +17,7 @@
 #endif
 
 //Definições de debug
-#define DEBUG
+//#define DEBUG
 
 //Definições de sensores
 
@@ -60,12 +60,11 @@
 
 //Variáveis de bibliotecas
 Adafruit_BMP085 bmp;
-SdFile arquivo;
 File arquivoLog;
 Servo paraquedas;
 
 char nomeBase[] = "dataLog";
-char nomeConcat[10];
+char nomeConcat[12];
 
 //Variáveis de timing
 int     millisAtual		= 0;
@@ -113,7 +112,7 @@ float	vetorAngulacao[3][10];
 
 
 
-char stringDados[50];
+String stringDados;
 
 //variáveis de controle
 
@@ -316,6 +315,7 @@ void leBotoes() {
 
 
 }
+}
 
 void adquireDados() {
 
@@ -425,13 +425,16 @@ void gravaDados() {
   //para ser usado. Aqui, todos os dados são concatenados em uma string que dá
   //o formato das linhas do arquivo de log.
 
-  if ((statusAtual == ESTADO_GRAVANDO) && arquivoLog) {
-    String stringDados = "";
-
+  if ((statusAtual == ESTADO_GRAVANDO)) {
+    arquivoLog = SD.open(nomeConcat, FILE_WRITE);
+	#ifdef DEBUG
+	Serial.println("Estou gravando!");
+	#endif
+	stringDados = "";
     millisGravacao = millis();
-    stringDados += String(millisGravacao);
+    stringDados += millisGravacao;
     stringDados += ",";
-    stringDados += String(mediaAltura);
+    stringDados += mediaAltura;
 
 #ifdef USANDO_IMU
     stringDados += ",";
@@ -447,9 +450,12 @@ void gravaDados() {
     stringDados += ",";
     stringDados += String(mediaAngulacao[EIXO_Z]);
 #endif
-
+	#ifdef DEBUG
+  Serial.println(stringDados);
+	#endif
+	
     arquivoLog.println(stringDados);
-    arquivoLog.close();
+	arquivoLog.close();
   }
 
 }
