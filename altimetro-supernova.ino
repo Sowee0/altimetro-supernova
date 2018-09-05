@@ -40,10 +40,10 @@
 
 
 //Definições de input
-#define PINO_BUZZER 2
+#define PINO_BUZZER 3
 #define PINO_BOTAO 5
-#define PINO_LED1 3
-#define PINO_LED2 6
+#define PINO_LED_VERD 3
+#define PINO_LED_VERM 6
 #define PINO_SERVO 7
 
 //definições de erros
@@ -150,8 +150,8 @@ void inicializa() {
   //Inicializando as portas
   pinMode(PINO_BOTAO, INPUT);
   pinMode(PINO_BUZZER, OUTPUT);
-  pinMode(PINO_LED1, OUTPUT);
-  pinMode(PINO_LED2, OUTPUT);
+  pinMode(PINO_LED_VERD, OUTPUT);
+  pinMode(PINO_LED_VERM, OUTPUT);
   
   //iniciando o servo
   paraquedas.attach(PINO_SERVO);
@@ -532,8 +532,8 @@ void notifica (char codigo) {
       frequencia[8] = 196;
       frequencia[9] = 196;
       if (millisAtual - millisLed	> 100) {
-        digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
-        digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
+        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
+        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERM));
 		millisLed = millisAtual;
       }
 
@@ -553,7 +553,7 @@ void notifica (char codigo) {
       frequencia[8] = 196;
       frequencia[9] = 196;
       if (millisAtual - millisLed	> 100){
-        digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
 		millisLed = millisAtual;
 	  }
 
@@ -574,7 +574,7 @@ void notifica (char codigo) {
       frequencia[8] = 196;
       frequencia[9] = 196;
       if (millisAtual - millisLed	> 100){
-        digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
+        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERM));
 		millisLed = millisAtual;
 	  }
 
@@ -595,7 +595,7 @@ void notifica (char codigo) {
       frequencia[8] = 0;
       frequencia[9] = 0;
       if (millisAtual - millisLed	> 100){
-        digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
 		millisLed = millisAtual;
 	  }
 
@@ -616,7 +616,7 @@ void notifica (char codigo) {
       frequencia[8] = 0;
       frequencia[9] = 0;
       if (millisAtual - millisLed	> 100){
-        digitalWrite(PINO_LED1, !digitalRead(PINO_LED2));
+        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERM));
 		millisLed = millisAtual;
 	  }
 
@@ -625,7 +625,7 @@ void notifica (char codigo) {
     default:
       //led verde piscando devagar indicando espera
       if (millisAtual - millisLed	> 500){
-        digitalWrite(PINO_LED1, !digitalRead(PINO_LED1));
+        digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
 		millisLed = millisAtual;
 	  }
 
