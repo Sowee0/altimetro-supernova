@@ -125,7 +125,7 @@ bool    apogeu = false;
 bool	abriuParaquedas = false;
 char    erro = false;
 char	statusAtual;
-char estado;
+bool estado;
 bool descendo = false;
 
 //Arrays de som de erro;
@@ -447,7 +447,7 @@ void gravaDados() {
   //para ser usado. Aqui, todos os dados são concatenados em uma string que dá
   //o formato das linhas do arquivo de log.
 
-  if ((estado == ESTADO_GRAVANDO) && arquivoLog) {
+  if ((statusAtual == ESTADO_GRAVANDO) && arquivoLog) {
     String stringDados = "";
 
     millisGravacao = millis();
