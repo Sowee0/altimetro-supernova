@@ -17,7 +17,7 @@
 #endif
 
 //Definições de debug
-//#define DEBUG
+#define DEBUG
 
 //Definições de sensores
 
@@ -42,7 +42,7 @@
 //Definições de input
 #define PINO_BUZZER 3
 #define PINO_BOTAO 5
-#define PINO_LED_VERD 3
+#define PINO_LED_VERD 2
 #define PINO_LED_VERM 6
 #define PINO_SERVO 7
 
