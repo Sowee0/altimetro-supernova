@@ -90,7 +90,6 @@ float	vetorAltura[10];
 float mediaAceleracao[3];
 float mediaAngulacao[3];
 
-//variaveis de kalman
 uint32_t timer;
 double accX, accY, accZ;
 double gyroX, gyroY, gyroZ;
@@ -107,6 +106,7 @@ double gyroZangle;
 
 
 #ifdef USANDO_IMU
+uint8_t i2c_data[12];
 float 	aceleracaoAtual[3]; //em [x,y,z]
 float	angulacaoAtual[3];	//em [x,y,z]
 float	vetorAceleracao[3][10];
@@ -129,7 +129,6 @@ char    erro = false;
 char	statusAtual;
 bool estado;
 bool descendo = false;
-
 //Arrays de som de erro;
 
 void setup() {
@@ -174,11 +173,44 @@ void inicializa() {
   //iniciar o IMU
 
 #ifdef USANDO_IMU
-  if (IMU) {
-	
-  
-    erro = ERRO_MPU;
+
+#if ARDUINO >= 157
+  Wire.setClock(400000UL); // Freq = 400kHz.
+#else
+  TWBR = ((F_CPU/400000UL) - 16) / 2; // Freq = 400kHz
+#endif
+
+  i2c_data[0] = 7;      /* 0x19 - Taxa de amostragem  8kHz/(7 + 1) = 1000Hz */
+  i2c_data[1] = 0x00;   /* 0x1A - Desabilitar FSYNC, Configurar o Filtro de ACC 260Hz, Configurar Filtro de Gyro 256Hz, Amostragem de 8Khz */
+  i2c_data[2] = 0x00;   /* 0x1B - Configurar o fundo de escala do Gyro ±250deg/s - Faixa */
+  i2c_data[3] = 0x00;   /* 0x1C - Configurar o fundo de escala do Acelerômetro para ±2g - Faixa */
+
+  /* Configirações do i2c*/
+  while(i2cWrite(0x19, i2c_data, 4, false));
+
+  /* PLL tenha como referência o gyro de eixo X, Desabilitando Sleep Mode */
+  while(i2cWrite(0x6B, 0x01, true));
+
+  /* */
+  while(i2cRead(0x75, i2c_data, 1));
+
+  if(i2c_data[0] != 0x68){
+    while(1>0){
+    #ifdef DEBUG
+      Serial.println("Erro no MPU");
+    #endif
+    }
   }
+
+  /* Tempo de estabilização do Sensor MPU6050 */
+  delay(100);
+
+  /* 1 - Leitura dos dados de Acc XYZ */
+  while(i2cRead(0x3B, i2c_data, 14));
+  #ifdef DEBUG_TEMP
+		Serial.println("iniciou o IMU");
+		#endif
+  
 #endif
 
   //inicializar o cartão SD
@@ -340,6 +372,12 @@ void adquireDados() {
 
 double dt = (double)(micros() - timer)/1000000;
 
+ /*Aceleração*/
+  accX = (int16_t)((i2c_data[0] << 8) | i2c_data[1]); // ([ MSB ] [ LSB ])
+  accY = (int16_t)((i2c_data[2] << 8) | i2c_data[3]); // ([ MSB ] [ LSB ])
+  accZ = (int16_t)((i2c_data[4] << 8) | i2c_data[5]); // ([ MSB ] [ LSB ])
+
+
   timer = micros();
   double pitch = atan(accX/sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG;
   double roll = atan(accY/sqrt(accX * accX + accZ * accZ)) * RAD_TO_DEG;
@@ -348,9 +386,9 @@ double dt = (double)(micros() - timer)/1000000;
   gyroYangle = gyroY / 131.0;
   gyroZangle = gyroZ/131.0;
   
-  // aceleracaoAtual[EIXO_X] = ;
-  // aceleracaoAtual[EIXO_Y] = ;
-  // aceleracaoAtual[EIXO_Z] = ;
+  aceleracaoAtual[EIXO_X] = (accX/16348) * 9.86;
+  aceleracaoAtual[EIXO_Y] = (accY/16348) * 9.86;;
+  aceleracaoAtual[EIXO_Z] = (accZ/16348) * 9.86;;
 
   angulacaoAtual[EIXO_X] = KalmanX.getAngle(roll, gyroXangle, dt);
   angulacaoAtual[EIXO_Y] = KalmanY.getAngle(pitch, gyroYangle, dt);
@@ -448,7 +486,6 @@ void gravaDados() {
     stringDados += millisGravacao;
     stringDados += ",";
     stringDados += mediaAltura;
-	stringDados += ",";
     
 #ifdef USANDO_IMU
     stringDados += ",";
@@ -464,14 +501,12 @@ void gravaDados() {
     stringDados += ",";
     stringDados += String(mediaAngulacao[EIXO_Z]);
 #endif
-	#ifdef DEBUG
-  Serial.println(stringDados);
-	#endif
 	
     arquivoLog.println(stringDados);
 	arquivoLog.close();
   }
 
+  
 }
 
 void checaCondicoes() {
