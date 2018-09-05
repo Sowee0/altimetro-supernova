@@ -225,6 +225,8 @@ else {
   Serial.println(erro);
 #endif
   statusAtual = erro;
+  
+  atualizaMillis = millis();
 }
 
 }
@@ -234,9 +236,10 @@ void loop() {
   //Recebendo o tempo atual de maneira a ter uma base de tempo
   //para uma taxa de atualização
   millisAtual = millis();
+  
+  
 
-
-  if ((atualizaMillis - millisAtual) >= TEMPO_ATUALIZACAO) {
+  if ((millisAtual - atualizaMillis) >= TEMPO_ATUALIZACAO) {
 
     //verifica se existem erros e mantém tentando inicializar
     if (erro)
@@ -367,7 +370,7 @@ void trataDados() {
   //otimizar isso aqui depois
   for (int i = 0; i < TAMANHO_MEDIA; i++) {
 
-    if (i = 0) {
+    if (i == 0) {
 
       mediaAltura = 0;
 #ifdef USANDO_IMU
