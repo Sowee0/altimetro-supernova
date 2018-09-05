@@ -45,6 +45,7 @@
 #define PINO_LED_VERD 2
 #define PINO_LED_VERM 6
 #define PINO_SERVO 7
+#define PINO_SD_CS 4
 
 //definições de erros
 #define ERRO_BMP 'b'
@@ -62,7 +63,7 @@ Adafruit_BMP085 bmp;
 SdFile arquivo;
 File arquivoLog;
 Servo paraquedas;
-const int chipSelect = 4;
+
 char nomeBase[] = "dataLog";
 char nomeConcat[10];
 
@@ -183,7 +184,7 @@ void inicializa() {
 #endif
 
   //inicializar o cartão SD
-  if (!SD.begin(chipSelect)) {
+  if (!SD.begin(PINO_SD_CS)) {
 
     erro = ERRO_SD;
 
