@@ -431,6 +431,8 @@ void gravaDados() {
     millisGravacao = millis();
     stringDados += millisGravacao;
     stringDados += ",";
+	stringDados += abriuParaquedas;
+    stringDados += ",";
     stringDados += mediaAltura;
     
 #ifdef USANDO_IMU
