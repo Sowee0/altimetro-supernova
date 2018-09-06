@@ -169,6 +169,8 @@ void inicializa() {
   if (!bmp.begin()) {
     erro = ERRO_BMP;
   }
+  
+  alturaInicial =  bmp.readAltitude(PRESSAO_MAR);
 
   //iniciar o IMU
 
@@ -366,7 +368,7 @@ void adquireDados() {
   //todas as medidas são feitas aqui em sequeência de maneira que os valores
   //sejam temporalmente próximos
   //pressaoAtual = bmp.readPressure();
-  alturaAltual = bmp.readAltitude(PRESSAO_MAR);
+  alturaAltual = bmp.readAltitude(PRESSAO_MAR) - alturaInicial;
 
 #ifdef USANDO_IMU
 
