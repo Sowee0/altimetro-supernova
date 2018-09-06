@@ -463,8 +463,10 @@ void checaCondicoes() {
 
   //Controle de descida, usando um threshold para evitar disparos não
   //intencionais
-  if (mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)
+  if (mediaAltura + THRESHOLD_DESCIDA < alturaMaxima){
     descendo = true;
+	statusAtual = ESTADO_RECUPERANDO;
+  }
 
 }
 
