@@ -10,6 +10,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Adafruit_BMP085.h>
+#include <MPU6050.h>
 
 //Definições de debug
 //#define DEBUG
@@ -18,7 +19,7 @@
 //Definições de sensores
 
 #define USANDO_BMP180
-//	#define	USANDO_IMU
+//#define	USANDO_IMU
 
 
 //Definições default
@@ -58,6 +59,7 @@
 Adafruit_BMP085 bmp;
 File arquivoLog;
 Servo paraquedas;
+MPU6050 mpu;
 
 char nomeBase[] = "dataLog";
 char nomeConcat[12];
@@ -87,6 +89,7 @@ float mediaAngulacao[3];
 
 
 #ifdef USANDO_IMU
+Vector normAccel;
 float 	aceleracaoAtual[3]; //em [x,y,z]
 float	angulacaoAtual[3];	//em [x,y,z]
 float	vetorAceleracao[3][10];
@@ -155,6 +158,10 @@ void inicializa() {
   //iniciar o IMU
 
 #ifdef USANDO_IMU
+	if(!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
+  {
+    erro = ERRO_MPU;
+  }
 
   
 #endif
@@ -316,29 +323,17 @@ void adquireDados() {
 
 #ifdef USANDO_IMU
 
-double dt = (double)(micros() - timer)/1000000;
-
- /*Aceleração*/
-  accX = (int16_t)((i2c_data[0] << 8) | i2c_data[1]); // ([ MSB ] [ LSB ])
-  accY = (int16_t)((i2c_data[2] << 8) | i2c_data[3]); // ([ MSB ] [ LSB ])
-  accZ = (int16_t)((i2c_data[4] << 8) | i2c_data[5]); // ([ MSB ] [ LSB ])
-
-
-  timer = micros();
-  double pitch = atan(accX/sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG;
-  double roll = atan(accY/sqrt(accX * accX + accZ * accZ)) * RAD_TO_DEG;
-  double yaw = atan(accZ/sqrt(accX * accX + accY * accY)) * RAD_TO_DEG;
-  gyroXangle = gyroX / 131.0;
-  gyroYangle = gyroY / 131.0;
-  gyroZangle = gyroZ/131.0;
+  normAccel = mpu.readNormalizeAccel();
+  aceleracaoAtual[EIXO_X] = normAccel.XAxis;
+  aceleracaoAtual[EIXO_Y] = normAccel.YAxis;
+  aceleracaoAtual[EIXO_Z] = normAccel.ZAxis;
   
-  aceleracaoAtual[EIXO_X] = (accX/16348) * 9.86;
-  aceleracaoAtual[EIXO_Y] = (accY/16348) * 9.86;;
-  aceleracaoAtual[EIXO_Z] = (accZ/16348) * 9.86;;
+  int pitch = -(atan2(normAccel.XAxis, sqrt(normAccel.YAxis*normAccel.YAxis + normAccel.ZAxis*normAccel.ZAxis))*180.0)/M_PI;
+  int roll = (atan2(normAccel.YAxis, normAccel.ZAxis)*180.0)/M_PI;
 
-  angulacaoAtual[EIXO_X] = KalmanX.getAngle(roll, gyroXangle, dt);
-  angulacaoAtual[EIXO_Y] = KalmanY.getAngle(pitch, gyroYangle, dt);
-  angulacaoAtual[EIXO_Z] = KalmanZ.getAngle(yaw, gyroZangle, dt);
+  angulacaoAtual[EIXO_X] = pitch;
+  angulacaoAtual[EIXO_Y] = roll;
+  angulacaoAtual[EIXO_Z] = 0;
 #endif
 
 }
