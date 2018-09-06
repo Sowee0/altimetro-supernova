@@ -176,7 +176,7 @@ void inicializa() {
 		#ifdef DEBUG_TEMP
 		Serial.println("não deveria estar aqui com o sd ligado");
 		#endif
-      sprintf(nomeConcat, "dataLog%d", n);
+      sprintf(nomeConcat, "log%d", n);
       if (SD.exists(nomeConcat))
           n++;
           else
