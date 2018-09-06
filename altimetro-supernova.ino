@@ -6,24 +6,19 @@
 
 */
 
-#include <Kalman.h>
 #include <Servo.h>
 #include <SPI.h>
 #include <SD.h>
 #include <Adafruit_BMP085.h>
 
-#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-#include "Wire.h"
-#endif
-
 //Definições de debug
 //#define DEBUG
-#define DEBUG_TEMP
+//#define DEBUG_TEMP
 
 //Definições de sensores
 
 #define USANDO_BMP180
-//#define	USANDO_IMU
+//	#define	USANDO_IMU
 
 
 //Definições default
@@ -37,7 +32,7 @@
 
 
 #define TEMPO_ATUALIZACAO 50 //em milisegundos
-#define THRESHOLD_DESCIDA 5  //em metros
+#define THRESHOLD_DESCIDA 2  //em metros
 
 
 //Definições de input
@@ -68,13 +63,13 @@ char nomeBase[] = "dataLog";
 char nomeConcat[12];
 
 //Variáveis de timing
-int     millisAtual		= 0;
-int     millisUltimo	= 0;
-int     atualizaMillis = 0;
-int		millisLed		= 0;
-int 	millisBuzzer	= 0;
-int		millisBotao		= 0;
-int 	millisGravacao	= 0;
+unsigned long	millisAtual		= 0;
+unsigned long  	millisUltimo	= 0;
+unsigned long	atualizaMillis = 0;
+unsigned long	millisLed		= 0;
+unsigned long	millisBuzzer	= 0;
+unsigned long	millisBotao		= 0;
+unsigned long	millisGravacao	= 0;
 int n = 0;
 int m = 0;
 int o =  0;
@@ -90,23 +85,8 @@ float	vetorAltura[10];
 float mediaAceleracao[3];
 float mediaAngulacao[3];
 
-uint32_t timer;
-double accX, accY, accZ;
-double gyroX, gyroY, gyroZ;
-Kalman KalmanX;
-Kalman KalmanY;
-Kalman KalmanZ;
-double KalAngleX;
-double KalAngleY;
-double KalAngleZ;
-
-double gyroXangle;
-double gyroYangle;
-double gyroZangle;
-
 
 #ifdef USANDO_IMU
-uint8_t i2c_data[12];
 float 	aceleracaoAtual[3]; //em [x,y,z]
 float	angulacaoAtual[3];	//em [x,y,z]
 float	vetorAceleracao[3][10];
@@ -118,6 +98,7 @@ float	vetorAngulacao[3][10];
 String stringDados;
 
 //variáveis de controle
+
 
 bool    inicializado = false;
 bool    terminou = false;
@@ -162,7 +143,6 @@ void inicializa() {
   
   //iniciando o servo
   paraquedas.attach(PINO_SERVO);
-
   erro = 0;
 
   //Inicializando o Altímetro
@@ -176,42 +156,6 @@ void inicializa() {
 
 #ifdef USANDO_IMU
 
-#if ARDUINO >= 157
-  Wire.setClock(400000UL); // Freq = 400kHz.
-#else
-  TWBR = ((F_CPU/400000UL) - 16) / 2; // Freq = 400kHz
-#endif
-
-  i2c_data[0] = 7;      /* 0x19 - Taxa de amostragem  8kHz/(7 + 1) = 1000Hz */
-  i2c_data[1] = 0x00;   /* 0x1A - Desabilitar FSYNC, Configurar o Filtro de ACC 260Hz, Configurar Filtro de Gyro 256Hz, Amostragem de 8Khz */
-  i2c_data[2] = 0x00;   /* 0x1B - Configurar o fundo de escala do Gyro ±250deg/s - Faixa */
-  i2c_data[3] = 0x00;   /* 0x1C - Configurar o fundo de escala do Acelerômetro para ±2g - Faixa */
-
-  /* Configirações do i2c*/
-  while(i2cWrite(0x19, i2c_data, 4, false));
-
-  /* PLL tenha como referência o gyro de eixo X, Desabilitando Sleep Mode */
-  while(i2cWrite(0x6B, 0x01, true));
-
-  /* */
-  while(i2cRead(0x75, i2c_data, 1));
-
-  if(i2c_data[0] != 0x68){
-    while(1>0){
-    #ifdef DEBUG
-      Serial.println("Erro no MPU");
-    #endif
-    }
-  }
-
-  /* Tempo de estabilização do Sensor MPU6050 */
-  delay(100);
-
-  /* 1 - Leitura dos dados de Acc XYZ */
-  while(i2cRead(0x3B, i2c_data, 14));
-  #ifdef DEBUG_TEMP
-		Serial.println("iniciou o IMU");
-		#endif
   
 #endif
 
@@ -232,7 +176,7 @@ void inicializa() {
 		#ifdef DEBUG_TEMP
 		Serial.println("não deveria estar aqui com o sd ligado");
 		#endif
-      sprintf(nomeConcat, "dataLog%d", n);
+      sprintf(nomeConcat, "log%d", n);
       if (SD.exists(nomeConcat))
           n++;
           else
@@ -477,7 +421,7 @@ void gravaDados() {
   //para ser usado. Aqui, todos os dados são concatenados em uma string que dá
   //o formato das linhas do arquivo de log.
 
-  if ((statusAtual == ESTADO_GRAVANDO)) {
+  if ((statusAtual == ESTADO_GRAVANDO) || (statusAtual == ESTADO_RECUPERANDO)) {
     arquivoLog = SD.open(nomeConcat, FILE_WRITE);
 	#ifdef DEBUG_TEMP
 	Serial.println("Estou gravando!");
@@ -486,6 +430,8 @@ void gravaDados() {
 	stringDados = "";
     millisGravacao = millis();
     stringDados += millisGravacao;
+    stringDados += ",";
+	stringDados += abriuParaquedas;
     stringDados += ",";
     stringDados += mediaAltura;
     
@@ -519,8 +465,10 @@ void checaCondicoes() {
 
   //Controle de descida, usando um threshold para evitar disparos não
   //intencionais
-  if (mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)
+  if (mediaAltura + THRESHOLD_DESCIDA < alturaMaxima){
     descendo = true;
+	statusAtual = ESTADO_RECUPERANDO;
+  }
 
 }
 
@@ -654,6 +602,7 @@ void notifica (char codigo) {
       frequencia[9] = 0;
       if (millisAtual - millisLed	> 100){
         digitalWrite(PINO_LED_VERM, !digitalRead(PINO_LED_VERM));
+		digitalWrite(PINO_LED_VERD, LOW);
 		millisLed = millisAtual;
 	  }
 
@@ -675,12 +624,15 @@ void notifica (char codigo) {
   //Lê o vetor de frequencias e toca a frequência na posição atual
   //voltando ao inicio do mesmo quando termina, assim tocando todos os tons
 
-  /* if (codigo) {
-    tone(PINO_BUZZER, frequencia[o], TEMPO_ATUALIZACAO);
+   if (codigo) {
+    if(frequencia[o]&&(statusAtual != ESTADO_ESPERA)){
+	tone(PINO_BUZZER, frequencia[o], TEMPO_ATUALIZACAO);
+	}
     o++;
     if (o > 9)
       o = 0; 
-  }*/
+   
+  }
  
   
   #ifdef DEBUG_TEMP
