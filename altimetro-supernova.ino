@@ -421,7 +421,7 @@ void gravaDados() {
   //para ser usado. Aqui, todos os dados são concatenados em uma string que dá
   //o formato das linhas do arquivo de log.
 
-  if ((statusAtual == ESTADO_GRAVANDO)) {
+  if ((statusAtual == ESTADO_GRAVANDO) || (statusAtual == ESTADO_RECUPERANDO)) {
     arquivoLog = SD.open(nomeConcat, FILE_WRITE);
 	#ifdef DEBUG_TEMP
 	Serial.println("Estou gravando!");
