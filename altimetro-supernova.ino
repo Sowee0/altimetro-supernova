@@ -620,12 +620,15 @@ void notifica (char codigo) {
   //Lê o vetor de frequencias e toca a frequência na posição atual
   //voltando ao inicio do mesmo quando termina, assim tocando todos os tons
 
-  /* if (codigo) {
-    tone(PINO_BUZZER, frequencia[o], TEMPO_ATUALIZACAO);
+   if (codigo) {
+    if(frequencia[o]&&(statusAtual != ESTADO_ESPERA)){
+	tone(PINO_BUZZER, frequencia[o], TEMPO_ATUALIZACAO);
+	}
     o++;
     if (o > 9)
       o = 0; 
-  }*/
+   
+  }
  
   
   #ifdef DEBUG_TEMP
