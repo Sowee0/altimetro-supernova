@@ -29,8 +29,8 @@
 #define EIXO_Z 2
 
 #define TAMANHO_MEDIA 10
-#define SERVO_ABERTO 1
-#define SERVO_FECHADO 180
+#define SERVO_ABERTO 180
+#define SERVO_FECHADO 1
 
 
 #define TEMPO_ATUALIZACAO 50 //em milisegundos
@@ -124,7 +124,7 @@ void setup() {
 
 #ifdef DEBUG_TEMP
   Serial.begin(115200);
-  paraquedas.write(0);
+  
 #endif
   //Faz o setup inicial dos sensores de movimento e altura assim
   //como as portas
@@ -147,6 +147,7 @@ void inicializa() {
   
   //iniciando o servo
   paraquedas.attach(PINO_SERVO);
+  paraquedas.write(SERVO_FECHADO);
   erro = 0;
 
   //Inicializando o Altímetro
@@ -461,7 +462,7 @@ void checaCondicoes() {
 
   //Controle de descida, usando um threshold para evitar disparos não
   //intencionais
-  if (mediaAltura + THRESHOLD_DESCIDA < alturaMaxima){
+  if ((mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)&&(statusAtual==ESTADO_GRAVANDO)){
     descendo = true;
 	statusAtual = ESTADO_RECUPERANDO;
   }
