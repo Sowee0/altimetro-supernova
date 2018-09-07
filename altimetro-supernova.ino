@@ -29,7 +29,8 @@
 #define EIXO_Z 2
 
 #define TAMANHO_MEDIA 10
-#define SERVO_ABERTO 255
+#define SERVO_ABERTO 1
+#define SERVO_FECHADO 180
 
 
 #define TEMPO_ATUALIZACAO 50 //em milisegundos
