@@ -9,7 +9,7 @@
 #include <Servo.h>
 #include <SPI.h>
 #include <SD.h>
-#include <Adafruit_BMP085.h>
+#include "Adafruit_BMP085.h"
 #include <MPU6050.h>
 
 //Definições de debug
@@ -30,11 +30,12 @@
 
 #define TAMANHO_MEDIA 10
 #define SERVO_ABERTO 180
+
 #define SERVO_FECHADO 0 
 
 
 #define TEMPO_ATUALIZACAO 50 //em milisegundos
-#define THRESHOLD_DESCIDA 2  //em metros
+#define THRESHOLD_DESCIDA 20  //em metros
 
 
 //Definições de input
@@ -80,13 +81,14 @@ int IMU = 1;
 
 //Variáveis de dados
 int32_t pressaoAtual;
-float   alturaAltual;
+float   alturaAtual;
 float   alturaInicial;
 float   alturaMaxima =  0;
 float   mediaAltura = 0;
 float	vetorAltura[10];
 float mediaAceleracao[3];
 float mediaAngulacao[3];
+
 
 
 #ifdef USANDO_IMU
@@ -114,6 +116,7 @@ char    erro = false;
 char	statusAtual;
 bool estado;
 bool descendo = false;
+bool salvarInicial = false;
 //Arrays de som de erro;
 
 void setup() {
@@ -124,7 +127,7 @@ void setup() {
 
 #ifdef DEBUG_TEMP
   Serial.begin(115200);
-  paraquedas.write(0);
+  
 #endif
   //Faz o setup inicial dos sensores de movimento e altura assim
   //como as portas
@@ -147,6 +150,7 @@ void inicializa() {
   
   //iniciando o servo
   paraquedas.attach(PINO_SERVO);
+  paraquedas.write(SERVO_FECHADO);
   erro = 0;
 
   //Inicializando o Altímetro
@@ -320,7 +324,7 @@ void adquireDados() {
   //todas as medidas são feitas aqui em sequeência de maneira que os valores
   //sejam temporalmente próximos
   //pressaoAtual = bmp.readPressure();
-  alturaAltual = bmp.readAltitude(PRESSAO_MAR) - alturaInicial;
+  alturaAtual = bmp.readAltitude(PRESSAO_MAR);
 
 #ifdef USANDO_IMU
 
@@ -343,7 +347,7 @@ void trataDados() {
 
   //o tratamento dos dados aqui é até o momento somente uma média rolante
 
-  vetorAltura [m] = alturaAltual;
+  vetorAltura [m] = alturaAtual;
 
 #ifdef USANDO_IMU
   vetorAceleracao [EIXO_X][m] = aceleracaoAtual[EIXO_X];
@@ -416,7 +420,10 @@ void gravaDados() {
   //verifica aqui o estado do foguete e também se o arquivo está aberto e pronto
   //para ser usado. Aqui, todos os dados são concatenados em uma string que dá
   //o formato das linhas do arquivo de log.
-
+  if(!salvarInicial){
+    alturaInicial = mediaAltura;
+    salvarInicial = 1;
+  }
   if ((statusAtual == ESTADO_GRAVANDO) || (statusAtual == ESTADO_RECUPERANDO)) {
     arquivoLog = SD.open(nomeConcat, FILE_WRITE);
 	#ifdef DEBUG_TEMP
@@ -430,6 +437,10 @@ void gravaDados() {
 	stringDados += abriuParaquedas;
     stringDados += ",";
     stringDados += mediaAltura;
+    stringDados += ",";
+    stringDados += alturaMaxima;
+    stringDados += ",";
+    stringDados += alturaAtual;
     
 #ifdef USANDO_IMU
     stringDados += ",";
@@ -456,12 +467,12 @@ void gravaDados() {
 void checaCondicoes() {
 
   //verificar a altura máxima
-  if (mediaAltura > alturaMaxima)
+  if ((mediaAltura > alturaMaxima)&&(statusAtual==ESTADO_GRAVANDO)   )
     alturaMaxima =  mediaAltura;
 
   //Controle de descida, usando um threshold para evitar disparos não
   //intencionais
-  if (mediaAltura + THRESHOLD_DESCIDA < alturaMaxima){
+  if ((mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)&&(statusAtual==ESTADO_GRAVANDO)){
     descendo = true;
 	statusAtual = ESTADO_RECUPERANDO;
   }
