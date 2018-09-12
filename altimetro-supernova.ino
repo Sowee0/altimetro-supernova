@@ -30,7 +30,8 @@
 
 #define TAMANHO_MEDIA 10
 #define SERVO_ABERTO 180
-#define SERVO_FECHADO 1
+
+#define SERVO_FECHADO 0 
 
 
 #define TEMPO_ATUALIZACAO 50 //em milisegundos
@@ -653,8 +654,17 @@ void abreParaquedas() {
 #ifdef DEBUG
   Serial.println("Abrindo o paraquedas!");
 #endif
-  paraquedas.write(SERVO_ABERTO);
-  abriuParaquedas = 1;
+
+  for (pos = SERVO_FECHADO; pos <= SERVO_ABERTO; pos += 10) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    paraquedas.write(pos);              // tell servo to go to position in variable 'pos'
+                          // waits 15ms for the servo to reach the position
+  }
+  for (pos = SERVO_ABERTO; pos >= SERVO_FECHADO; pos -= 10) { // goes from 180 degrees to 0 degrees
+    paraquedas.write(pos); 
+  }	// tell servo to go to position in variable 'pos'
+
+  abriuParaquedas = true;
 
 }
 
