@@ -459,17 +459,17 @@ void gravaDados() {
     stringDados += mediaTemperatura;    
 #ifdef USANDO_IMU
     stringDados += ",";
-    stringDados += String(mediaAceleracao[EIXO_X]);
+    stringDados += mediaAceleracao[EIXO_X];
     stringDados += ",";
-    stringDados += String(mediaAceleracao[EIXO_Y]);
+    stringDados += mediaAceleracao[EIXO_Y];
     stringDados += ",";
-    stringDados += String(mediaAceleracao[EIXO_Z]);
+    stringDados += mediaAceleracao[EIXO_Z];
     stringDados += ",";
-    stringDados += String(mediaAngulacao[EIXO_X]);
+    stringDados += mediaAngulacao[EIXO_X];
     stringDados += ",";
-    stringDados += String(mediaAngulacao[EIXO_Y]);
+    stringDados += mediaAngulacao[EIXO_Y];
     stringDados += ",";
-    stringDados += String(mediaAngulacao[EIXO_Z]);
+    stringDados += mediaAngulacao[EIXO_Z];
 #endif
 	
     arquivoLog.println(stringDados);
