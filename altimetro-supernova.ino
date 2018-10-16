@@ -6,7 +6,6 @@
 
 */
 
-#include <Servo.h>
 #include <SPI.h>
 #include <SD.h>
 #include "Adafruit_BMP085.h"
@@ -19,7 +18,7 @@
 //Definições de sensores
 
 #define USANDO_BMP180
-//#define	USANDO_IMU
+#define	USANDO_IMU
 
 
 //Definições default
@@ -42,7 +41,7 @@
 #define PINO_BOTAO 2
 #define PINO_LED_VERD 5
 #define PINO_LED_VERM 6
-#define PINO_SERVO 7
+#define PINO_RELE 7
 #define PINO_SD_CS 4
 
 //definições de erros
@@ -155,8 +154,8 @@ void inicializa() {
   pinMode(PINO_LED_VERM, OUTPUT);
   
   //iniciando o servo
-  paraquedas.attach(PINO_SERVO);
-  paraquedas.write(SERVO_FECHADO);
+  pinMode(PINO_RELE, OUTPUT);
+  digitalWrite(PINO_RELE, LOW);
   erro = 0;
 
   //Inicializando o Altímetro
@@ -442,7 +441,7 @@ void gravaDados() {
     arquivoLog = SD.open(nomeConcat, FILE_WRITE);
 	#ifdef DEBUG_TEMP
 	Serial.println("Estou gravando!");
-	paraquedas.write(SERVO_ABERTO);
+	digitalWrite(PINO_RELE, HIGH);
 	#endif
 	stringDados = "";
     millisGravacao = millis();
@@ -669,7 +668,7 @@ void abreParaquedas() {
 #ifdef DEBUG
   Serial.println("Abrindo o paraquedas!");
 #endif
-  paraquedas.write(SERVO_ABERTO);
+  digitalWrite(PINO_RELE, HIGH);
   abriuParaquedas = 1;
 
 }
