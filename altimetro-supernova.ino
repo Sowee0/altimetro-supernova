@@ -79,11 +79,18 @@ int o =  0;
 int IMU = 1;
 
 //Variáveis de dados
-int32_t pressaoAtual;
+//int32_t pressaoAtual;
 float   alturaAtual;
 float   alturaInicial;
 float   alturaMaxima =  0;
 float   mediaAltura = 0;
+float mediaPressao =0;
+float pressaoAtual;
+float vetorPressao[10];
+float temperatura;
+float mediaTemperatura;
+float vetorTemperatura[10];
+float temperaturaAtual;
 float	vetorAltura[10];
 float mediaAceleracao[3];
 float mediaAngulacao[3];
@@ -322,8 +329,9 @@ void adquireDados() {
 
   //todas as medidas são feitas aqui em sequeência de maneira que os valores
   //sejam temporalmente próximos
-  //pressaoAtual = bmp.readPressure();
+  pressaoAtual = bmp.readPressure();
   alturaAtual = bmp.readAltitude(PRESSAO_MAR);
+  temperaturaAtual = bmp.readTemperature();
 
 #ifdef USANDO_IMU
 
@@ -347,6 +355,8 @@ void trataDados() {
   //o tratamento dos dados aqui é até o momento somente uma média rolante
 
   vetorAltura [m] = alturaAtual;
+  vetorPressao[m] = pressaoAtual;
+  vetorTemperatura[m] = temperaturaAtual;
 
 #ifdef USANDO_IMU
   vetorAceleracao [EIXO_X][m] = aceleracaoAtual[EIXO_X];
@@ -364,6 +374,8 @@ void trataDados() {
     if (i == 0) {
 
       mediaAltura = 0;
+      mediaPressao=0;
+      mediaAltura=0;
 #ifdef USANDO_IMU
       mediaAceleracao[EIXO_X] = 0;
       mediaAceleracao[EIXO_Y] = 0;
@@ -375,8 +387,9 @@ void trataDados() {
 #endif
 
     }
-
-    mediaAltura += vetorAltura[i];
+    mediaPressao +=vetorPressao[i];
+    mediaAltura +=vetorAltura[i];
+    mediaTemperatura +=vetorTemperatura[i];
 #ifdef USANDO_IMU
     mediaAceleracao[EIXO_X] += vetorAceleracao[EIXO_X][i];
     mediaAceleracao[EIXO_Y] += vetorAceleracao[EIXO_Y][i];
@@ -392,6 +405,8 @@ void trataDados() {
 
   //Variáveis finais prontas para serem salvas
   mediaAltura = mediaAltura / TAMANHO_MEDIA;
+  mediaPressao = mediaPressao/ TAMANHO_MEDIA;
+  mediaTemperatura = mediaTemperatura/ TAMANHO_MEDIA;
 
 #ifdef USANDO_IMU
   mediaAceleracao[EIXO_X] = mediaAceleracao[EIXO_X] / TAMANHO_MEDIA;
@@ -439,21 +454,22 @@ void gravaDados() {
     stringDados += ",";
     stringDados += alturaMaxima;
     stringDados += ",";
-    stringDados += alturaAtual;
-    
+    stringDados += mediaPressao;
+    stringDados += ",";
+    stringDados += mediaTemperatura;    
 #ifdef USANDO_IMU
     stringDados += ",";
-    stringDados += String(mediaAceleracao[EIXO_X]);
+    stringDados += mediaAceleracao[EIXO_X];
     stringDados += ",";
-    stringDados += String(mediaAceleracao[EIXO_Y]);
+    stringDados += mediaAceleracao[EIXO_Y];
     stringDados += ",";
-    stringDados += String(mediaAceleracao[EIXO_Z]);
+    stringDados += mediaAceleracao[EIXO_Z];
     stringDados += ",";
-    stringDados += String(mediaAngulacao[EIXO_X]);
+    stringDados += mediaAngulacao[EIXO_X];
     stringDados += ",";
-    stringDados += String(mediaAngulacao[EIXO_Y]);
+    stringDados += mediaAngulacao[EIXO_Y];
     stringDados += ",";
-    stringDados += String(mediaAngulacao[EIXO_Z]);
+    stringDados += mediaAngulacao[EIXO_Z];
 #endif
 	
     arquivoLog.println(stringDados);
