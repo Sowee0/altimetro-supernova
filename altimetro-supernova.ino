@@ -1,15 +1,7 @@
-/*###### ALTÍMETRO SUPERNOVA #######
-
-
-
-
-
-*/
-
 #include <SPI.h>
 #include <SD.h>
 #include "Adafruit_BMP085.h"
-#include <MPU6050.h>
+#include "MPU6050.h"
 
 //Definições de debug
 //#define DEBUG
@@ -18,7 +10,7 @@
 //Definições de sensores
 
 #define USANDO_BMP180
-#define	USANDO_IMU
+#define  USANDO_IMU
 
 
 //Definições default
@@ -58,20 +50,19 @@
 //Variáveis de bibliotecas
 Adafruit_BMP085 bmp;
 File arquivoLog;
-Servo paraquedas;
 MPU6050 mpu;
 
 char nomeBase[] = "dataLog";
 char nomeConcat[12];
 
 //Variáveis de timing
-unsigned long	millisAtual		= 0;
-unsigned long  	millisUltimo	= 0;
-unsigned long	atualizaMillis = 0;
-unsigned long	millisLed		= 0;
-unsigned long	millisBuzzer	= 0;
-unsigned long	millisBotao		= 0;
-unsigned long	millisGravacao	= 0;
+unsigned long millisAtual   = 0;
+unsigned long   millisUltimo  = 0;
+unsigned long atualizaMillis = 0;
+unsigned long millisLed   = 0;
+unsigned long millisBuzzer  = 0;
+unsigned long millisBotao   = 0;
+unsigned long millisGravacao  = 0;
 int n = 0;
 int m = 0;
 int o =  0;
@@ -90,7 +81,7 @@ float temperatura;
 float mediaTemperatura;
 float vetorTemperatura[10];
 float temperaturaAtual;
-float	vetorAltura[10];
+float vetorAltura[10];
 float mediaAceleracao[3];
 float mediaAngulacao[3];
 
@@ -98,10 +89,10 @@ float mediaAngulacao[3];
 
 #ifdef USANDO_IMU
 Vector normAccel;
-float 	aceleracaoAtual[3]; //em [x,y,z]
-float	angulacaoAtual[3];	//em [x,y,z]
-float	vetorAceleracao[3][10];
-float	vetorAngulacao[3][10];
+float   aceleracaoAtual[3]; //em [x,y,z]
+float angulacaoAtual[3];  //em [x,y,z]
+float vetorAceleracao[3][10];
+float vetorAngulacao[3][10];
 #endif
 
 
@@ -114,11 +105,11 @@ String stringDados;
 bool    inicializado = false;
 bool    terminou = false;
 bool    rodando = false;
-bool 	emVoo = false;
+bool  emVoo = false;
 bool    apogeu = false;
-bool	abriuParaquedas = false;
+bool  abriuParaquedas = false;
 char    erro = false;
-char	statusAtual;
+char  statusAtual;
 bool estado;
 bool descendo = false;
 bool salvarInicial = false;
@@ -168,7 +159,7 @@ void inicializa() {
   //iniciar o IMU
 
 #ifdef USANDO_IMU
-	if(!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
+  if(!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
   {
     erro = ERRO_MPU;
   }
@@ -190,9 +181,9 @@ void inicializa() {
 
     while (!parar)
     {
-		#ifdef DEBUG_TEMP
-		Serial.println("não deveria estar aqui com o sd ligado");
-		#endif
+    #ifdef DEBUG_TEMP
+    Serial.println("não deveria estar aqui com o sd ligado");
+    #endif
       sprintf(nomeConcat, "log%d", n);
       if (SD.exists(nomeConcat))
           n++;
@@ -236,56 +227,56 @@ void loop() {
   millisAtual = millis();
   
   
-		
-		
+    
+    
 
   if ((millisAtual - atualizaMillis) >= TEMPO_ATUALIZACAO) {
-	#ifdef DEBUG_TEMP
-		Serial.print("Status atual:");
-		Serial.println(statusAtual);
-		Serial.print("estado atual de erro:");
-		Serial.println(erro);
-		#endif
+  #ifdef DEBUG_TEMP
+    Serial.print("Status atual:");
+    Serial.println(statusAtual);
+    Serial.print("estado atual de erro:");
+    Serial.println(erro);
+    #endif
     //verifica se existem erros e mantém tentando inicializar
     if (erro){
       inicializa();
-	  notifica(erro);
-	}
+    notifica(erro);
+  }
 
     //Se não existem erros no sistema relacionados a inicialização
     //dos dispositivos, fazer:
 
     if (!erro) {
-		
-		#ifdef DEBUG
-		Serial.println("Rodando o loop de funções");
-		#endif
+    
+    #ifdef DEBUG
+    Serial.println("Rodando o loop de funções");
+    #endif
 
       //Verifica os botões e trata o clique simples e o clique longo
       //como controle de início/fim da gravação.
       leBotoes();
-	  
-	  #ifdef DEBUG
-	Serial.println("Li os botões");
-	  #endif
+    
+    #ifdef DEBUG
+  Serial.println("Li os botões");
+    #endif
 
       //Recebe os dados dos sensores e os deixa salvo em variáveis
       adquireDados();
-		#ifdef DEBUG
-		Serial.println("Adquiri os dados");
-		#endif
+    #ifdef DEBUG
+    Serial.println("Adquiri os dados");
+    #endif
 
       //Trata os dados, fazendo filtragens e ajustes.
       trataDados();
-		#ifdef DEBUG
-		Serial.println("Tratei os dados");
-		#endif
+    #ifdef DEBUG
+    Serial.println("Tratei os dados");
+    #endif
 
       //Se a gravação estiver ligada, grava os dados.
       gravaDados();
-		#ifdef DEBUG
-		Serial.println("Gravei os dados");
-		#endif
+    #ifdef DEBUG
+    Serial.println("Gravei os dados");
+    #endif
 
       //De acordo com os dados recebidos, verifica condições como a
       //altura máxima atingida e seta variáveis de controle de modo
@@ -439,15 +430,15 @@ void gravaDados() {
   }
   if ((statusAtual == ESTADO_GRAVANDO) || (statusAtual == ESTADO_RECUPERANDO)) {
     arquivoLog = SD.open(nomeConcat, FILE_WRITE);
-	#ifdef DEBUG_TEMP
-	Serial.println("Estou gravando!");
-	digitalWrite(PINO_RELE, HIGH);
-	#endif
-	stringDados = "";
+  #ifdef DEBUG_TEMP
+  Serial.println("Estou gravando!");
+  digitalWrite(PINO_RELE, HIGH);
+  #endif
+  stringDados = "";
     millisGravacao = millis();
     stringDados += millisGravacao;
     stringDados += ",";
-	stringDados += abriuParaquedas;
+  stringDados += abriuParaquedas;
     stringDados += ",";
     stringDados += mediaAltura;
     stringDados += ",";
@@ -470,9 +461,9 @@ void gravaDados() {
     stringDados += ",";
     stringDados += mediaAngulacao[EIXO_Z];
 #endif
-	
+  
     arquivoLog.println(stringDados);
-	arquivoLog.close();
+  arquivoLog.close();
   }
 
   
@@ -488,7 +479,7 @@ void checaCondicoes() {
   //intencionais
   if ((mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)&&(statusAtual==ESTADO_GRAVANDO)){
     descendo = true;
-	statusAtual = ESTADO_RECUPERANDO;
+  statusAtual = ESTADO_RECUPERANDO;
   }
 
 }
@@ -511,7 +502,7 @@ void recupera () {
 }
 
 void notifica (char codigo) {
-	
+  
   unsigned int frequencia[10];
   //os tons aqui são tocados por um vetor que contem as frequências. Cada
   //slot do mesmo define um espaço de 100ms.
@@ -537,10 +528,10 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 196;
       frequencia[9] = 196;
-      if (millisAtual - millisLed	> 100) {
+      if (millisAtual - millisLed > 100) {
         digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
         digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERM));
-		millisLed = millisAtual;
+    millisLed = millisAtual;
       }
 
       break;
@@ -558,10 +549,10 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 196;
       frequencia[9] = 196;
-      if (millisAtual - millisLed	> 100){
+      if (millisAtual - millisLed > 100){
         digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
-		millisLed = millisAtual;
-	  }
+    millisLed = millisAtual;
+    }
 
       break;
 
@@ -579,10 +570,10 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 196;
       frequencia[9] = 196;
-      if (millisAtual - millisLed	> 100){
+      if (millisAtual - millisLed > 100){
         digitalWrite(PINO_LED_VERM, !digitalRead(PINO_LED_VERM));
-		millisLed = millisAtual;
-	  }
+    millisLed = millisAtual;
+    }
 
       break;
 
@@ -600,10 +591,10 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 0;
       frequencia[9] = 0;
-      if (millisAtual - millisLed	> 100){
+      if (millisAtual - millisLed > 100){
         digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
-		millisLed = millisAtual;
-	  }
+    millisLed = millisAtual;
+    }
 
       break;
 
@@ -621,20 +612,20 @@ void notifica (char codigo) {
       frequencia[7] = 0;
       frequencia[8] = 0;
       frequencia[9] = 0;
-      if (millisAtual - millisLed	> 100){
+      if (millisAtual - millisLed > 100){
         digitalWrite(PINO_LED_VERM, !digitalRead(PINO_LED_VERM));
-		digitalWrite(PINO_LED_VERD, LOW);
-		millisLed = millisAtual;
-	  }
+    digitalWrite(PINO_LED_VERD, LOW);
+    millisLed = millisAtual;
+    }
 
       break;
 
     case ESTADO_ESPERA:
       //led verde piscando devagar indicando espera
-      if (millisAtual - millisLed	> 500){
+      if (millisAtual - millisLed > 500){
         digitalWrite(PINO_LED_VERD, !digitalRead(PINO_LED_VERD));
-		millisLed = millisAtual;
-	  }
+    millisLed = millisAtual;
+    }
 
 
       break;
@@ -647,8 +638,8 @@ void notifica (char codigo) {
 
    if (codigo) {
     if(frequencia[o]&&(statusAtual != ESTADO_ESPERA)){
-	tone(PINO_BUZZER, frequencia[o], TEMPO_ATUALIZACAO);
-	}
+  tone(PINO_BUZZER, frequencia[o], TEMPO_ATUALIZACAO);
+  }
     o++;
     if (o > 9)
       o = 0; 
@@ -658,7 +649,7 @@ void notifica (char codigo) {
   
   #ifdef DEBUG_TEMP
     Serial.print("tocando a posição do vetor:");
-	Serial.println(o);
+  Serial.println(o);
 
 #endif
 }
@@ -672,12 +663,3 @@ void abreParaquedas() {
   abriuParaquedas = 1;
 
 }
-
-
-
-
-
-
-
-
-
