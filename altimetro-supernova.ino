@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include <SD.h>
+#include <Wire.h>
 #include "Adafruit_BMP085.h"
 #include "MPU6050.h"
 
@@ -10,7 +11,7 @@
 //Definições de sensores
 
 #define USANDO_BMP180
-#define  USANDO_IMU
+#define USANDO_IMU
 
 
 //Definições default
@@ -25,7 +26,7 @@
 
 
 #define TEMPO_ATUALIZACAO 50 //em milisegundos
-#define THRESHOLD_DESCIDA 20  //em metros
+#define THRESHOLD_DESCIDA 4  //em metros
 
 
 //Definições de input
@@ -76,23 +77,16 @@ float   alturaMaxima =  0;
 float   mediaAltura = 0;
 float mediaPressao =0;
 float pressaoAtual;
-float vetorPressao[10];
 float temperatura;
 float mediaTemperatura;
-float vetorTemperatura[10];
 float temperaturaAtual;
-float vetorAltura[10];
-float mediaAceleracao[3];
-float mediaAngulacao[3];
+
 
 
 
 #ifdef USANDO_IMU
-Vector normAccel;
 float   aceleracaoAtual[3]; //em [x,y,z]
 float angulacaoAtual[3];  //em [x,y,z]
-float vetorAceleracao[3][10];
-float vetorAngulacao[3][10];
 #endif
 
 
@@ -184,7 +178,7 @@ void inicializa() {
     #ifdef DEBUG_TEMP
     Serial.println("não deveria estar aqui com o sd ligado");
     #endif
-      sprintf(nomeConcat, "log%d", n);
+      sprintf(nomeConcat, "log%d.txt", n);
       if (SD.exists(nomeConcat))
           n++;
           else
@@ -325,98 +319,21 @@ void adquireDados() {
 
 #ifdef USANDO_IMU
 
-  normAccel = mpu.readNormalizeAccel();
+  Vector normAccel = mpu.readNormalizeAccel();
+  Vector normGyro = mpu.readNormalizeGyro();
+  
   aceleracaoAtual[EIXO_X] = normAccel.XAxis;
   aceleracaoAtual[EIXO_Y] = normAccel.YAxis;
   aceleracaoAtual[EIXO_Z] = normAccel.ZAxis;
-  
-  int pitch = -(atan2(normAccel.XAxis, sqrt(normAccel.YAxis*normAccel.YAxis + normAccel.ZAxis*normAccel.ZAxis))*180.0)/M_PI;
-  int roll = (atan2(normAccel.YAxis, normAccel.ZAxis)*180.0)/M_PI;
 
-  angulacaoAtual[EIXO_X] = pitch;
-  angulacaoAtual[EIXO_Y] = roll;
-  angulacaoAtual[EIXO_Z] = 0;
+  angulacaoAtual[EIXO_X] = normGyro.XAxis;
+  angulacaoAtual[EIXO_Y] = normGyro.YAxis;
+  angulacaoAtual[EIXO_Z] = normGyro.ZAxis;
 #endif
 
 }
 
 void trataDados() {
-
-  //o tratamento dos dados aqui é até o momento somente uma média rolante
-
-  vetorAltura [m] = alturaAtual;
-  vetorPressao[m] = pressaoAtual;
-  vetorTemperatura[m] = temperaturaAtual;
-
-#ifdef USANDO_IMU
-  vetorAceleracao [EIXO_X][m] = aceleracaoAtual[EIXO_X];
-  vetorAceleracao [EIXO_Y][m] = aceleracaoAtual[EIXO_Y];
-  vetorAceleracao [EIXO_Z][m] = aceleracaoAtual[EIXO_Z];
-
-  vetorAngulacao [EIXO_X][m] = angulacaoAtual[EIXO_X];
-  vetorAngulacao [EIXO_Y][m] = angulacaoAtual[EIXO_Y];
-  vetorAngulacao [EIXO_Z][m] = angulacaoAtual[EIXO_Z];
-#endif
-
-  //otimizar isso aqui depois
-  for (int i = 0; i < TAMANHO_MEDIA; i++) {
-
-    if (i == 0) {
-
-      mediaAltura = 0;
-      mediaPressao=0;
-      mediaAltura=0;
-#ifdef USANDO_IMU
-      mediaAceleracao[EIXO_X] = 0;
-      mediaAceleracao[EIXO_Y] = 0;
-      mediaAceleracao[EIXO_Z] = 0;
-
-      mediaAngulacao[EIXO_X] = 0;
-      mediaAngulacao[EIXO_Y] = 0;
-      mediaAngulacao[EIXO_Z] = 0;
-#endif
-
-    }
-    mediaPressao +=vetorPressao[i];
-    mediaAltura +=vetorAltura[i];
-    mediaTemperatura +=vetorTemperatura[i];
-#ifdef USANDO_IMU
-    mediaAceleracao[EIXO_X] += vetorAceleracao[EIXO_X][i];
-    mediaAceleracao[EIXO_Y] += vetorAceleracao[EIXO_Y][i];
-    mediaAceleracao[EIXO_Z] += vetorAceleracao[EIXO_Z][i];
-
-    mediaAngulacao[EIXO_X] += vetorAngulacao[EIXO_X][i];
-    mediaAngulacao[EIXO_Y] += vetorAngulacao[EIXO_Y][i];
-    mediaAngulacao[EIXO_Z] += vetorAngulacao[EIXO_Z][i];
-#endif
-
-
-  }
-
-  //Variáveis finais prontas para serem salvas
-  mediaAltura = mediaAltura / TAMANHO_MEDIA;
-  mediaPressao = mediaPressao/ TAMANHO_MEDIA;
-  mediaTemperatura = mediaTemperatura/ TAMANHO_MEDIA;
-
-#ifdef USANDO_IMU
-  mediaAceleracao[EIXO_X] = mediaAceleracao[EIXO_X] / TAMANHO_MEDIA;
-  mediaAceleracao[EIXO_Y] = mediaAceleracao[EIXO_Y] / TAMANHO_MEDIA;
-  mediaAceleracao[EIXO_Z] = mediaAceleracao[EIXO_Z] / TAMANHO_MEDIA;
-
-  mediaAngulacao[EIXO_X] = mediaAngulacao[EIXO_X] / TAMANHO_MEDIA;
-  mediaAngulacao[EIXO_Y] = mediaAngulacao[EIXO_Y] / TAMANHO_MEDIA;
-  mediaAngulacao[EIXO_Z] = mediaAngulacao[EIXO_Z] / TAMANHO_MEDIA;
-#endif
-
-
-
-  m++;
-
-  if (m >= TAMANHO_MEDIA)
-    m = 0;
-
-
-
 }
 
 void gravaDados() {
@@ -438,28 +355,28 @@ void gravaDados() {
     millisGravacao = millis();
     stringDados += millisGravacao;
     stringDados += ",";
-  stringDados += abriuParaquedas;
+    stringDados += abriuParaquedas;
     stringDados += ",";
-    stringDados += mediaAltura;
+    stringDados += alturaAtual;
     stringDados += ",";
     stringDados += alturaMaxima;
     stringDados += ",";
-    stringDados += mediaPressao;
+    stringDados += pressaoAtual;
     stringDados += ",";
-    stringDados += mediaTemperatura;    
+    stringDados += temperaturaAtual;    
 #ifdef USANDO_IMU
     stringDados += ",";
-    stringDados += mediaAceleracao[EIXO_X];
+    stringDados += aceleracaoAtual[EIXO_X];
     stringDados += ",";
-    stringDados += mediaAceleracao[EIXO_Y];
+    stringDados += aceleracaoAtual[EIXO_Y];
     stringDados += ",";
-    stringDados += mediaAceleracao[EIXO_Z];
+    stringDados += aceleracaoAtual[EIXO_Z];
     stringDados += ",";
-    stringDados += mediaAngulacao[EIXO_X];
+    stringDados += angulacaoAtual[EIXO_X];
     stringDados += ",";
-    stringDados += mediaAngulacao[EIXO_Y];
+    stringDados += angulacaoAtual[EIXO_Y];
     stringDados += ",";
-    stringDados += mediaAngulacao[EIXO_Z];
+    stringDados += angulacaoAtual[EIXO_Z];
 #endif
   
     arquivoLog.println(stringDados);
@@ -472,12 +389,12 @@ void gravaDados() {
 void checaCondicoes() {
 
   //verificar a altura máxima
-  if ((mediaAltura > alturaMaxima)&&(statusAtual==ESTADO_GRAVANDO)   )
-    alturaMaxima =  mediaAltura;
+  if ((alturaAtual > alturaMaxima)&&(statusAtual==ESTADO_GRAVANDO)   )
+    alturaMaxima =  alturaAtual;
 
   //Controle de descida, usando um threshold para evitar disparos não
   //intencionais
-  if ((mediaAltura + THRESHOLD_DESCIDA < alturaMaxima)&&(statusAtual==ESTADO_GRAVANDO)){
+  if ((alturaAtual + THRESHOLD_DESCIDA < alturaMaxima)&&(statusAtual==ESTADO_GRAVANDO)){
     descendo = true;
   statusAtual = ESTADO_RECUPERANDO;
   }
